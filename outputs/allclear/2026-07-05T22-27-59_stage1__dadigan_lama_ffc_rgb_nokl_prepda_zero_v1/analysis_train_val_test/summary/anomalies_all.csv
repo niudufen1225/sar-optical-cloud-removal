@@ -1,0 +1,3 @@
+message,run,severity,source_file,topic
+当前日志到 epoch 160/200，结论只覆盖未完成训练。,2026-07-05T22-27-59_stage1__dadigan_lama_ffc_rgb_nokl_prepda_zero_v1,info,/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-05T22-27-59_stage1__dadigan_lama_ffc_rgb_nokl_prepda_zero_v1/analysis_train_val_test/log_visual/anomalies.csv,progress
+最近若干 epoch 的 real/fake logit 非常接近；判别器区分度弱或处于均衡状态，需要结合视觉和 loss 振荡判断。,2026-07-05T22-27-59_stage1__dadigan_lama_ffc_rgb_nokl_prepda_zero_v1,info,/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-05T22-27-59_stage1__dadigan_lama_ffc_rgb_nokl_prepda_zero_v1/analysis_train_val_test/log_visual/anomalies.csv,discriminator

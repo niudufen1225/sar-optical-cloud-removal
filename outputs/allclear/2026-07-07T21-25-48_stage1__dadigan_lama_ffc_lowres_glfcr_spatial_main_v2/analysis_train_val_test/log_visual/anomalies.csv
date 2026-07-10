@@ -1,0 +1,5 @@
+severity,topic,message
+info,progress,当前日志到 epoch 115/120，结论只覆盖未完成训练。
+warn,gan_transition,GAN/FM 启动后早期 train total 均值上升 58.3%，需要检查 loss 权重尺度和视觉质量。
+warn,gan_transition,GAN/FM 启动后 recon_total 均值上升 38.8%，可能出现对抗项干扰重建项。
+info,discriminator,最近若干 epoch 的 real/fake logit 非常接近；判别器区分度弱或处于均衡状态，需要结合视觉和 loss 振荡判断。

@@ -1,0 +1,42 @@
+{
+  "epoch": 50,
+  "best_metric": 4.451389935883609,
+  "best_metric_name": "recon_total",
+  "last_train": {
+    "disc_total": 1.1928612059409465,
+    "disc_real_loss": 0.4318603442622981,
+    "disc_fake_loss": 0.74426235144656,
+    "disc_real_gp": 0.016738504481812317,
+    "disc_real_logit": 0.7417404299846847,
+    "disc_fake_logit": 0.6352655036824923,
+    "shadow_valid_frac": 0.0,
+    "shadow_no_shadow_frac": 0.0,
+    "shadow_ambiguous_frac": 0.0,
+    "final_l1": 0.0,
+    "grad": 0.0,
+    "shadow_removal": 0.0,
+    "shadow_mask": 0.0,
+    "shadow_penumbra": 0.0,
+    "cloud_l1": 0.03864836949137373,
+    "cloud_kl": 0.3800332102389146,
+    "cloud_adv": 0.506089331633454,
+    "feature_matching": 0.08702353450159232,
+    "perceptual": 0.12376879893858499,
+    "recon_total": 5.384969794422115,
+    "gan_total": 5.044299011930414,
+    "total": 10.42926879322857
+  },
+  "loss_weights": {
+    "w_final_l1": 0.0,
+    "w_grad": 0.0,
+    "w_shadow_removal": 0.0,
+    "w_shadow_mask": 0.0,
+    "w_shadow_penumbra": 0.0,
+    "w_cloud_l1": 100.0,
+    "w_cloud_kl": 4.0,
+    "w_cloud_adv": 2.0,
+    "w_feature_matching": 25.0,
+    "w_perceptual": 15.0
+  },
+  "lr": 4e-05
+}

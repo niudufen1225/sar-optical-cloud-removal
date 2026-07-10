@@ -1,0 +1,12 @@
+metric,target_weight,current_weight,start_epoch,ramp_epochs,active_epoch_count,status
+final_l1,0.0,0.0,1,0,0,disabled
+grad,0.0,0.0,1,0,0,disabled
+shadow_removal,0.0,0.0,1,0,0,disabled
+shadow_mask,0.0,0.0,1,0,0,disabled
+shadow_penumbra,0.0,0.0,1,0,0,disabled
+cloud_l1,100.0,100.0,1,0,50,active
+cloud_kl,4.0,4.0,5,25,46,active
+cloud_adv,2.0,2.0,10,40,41,active
+feature_matching,25.0,25.0,10,40,41,active
+perceptual,15.0,15.0,5,25,46,active
+disc_total,2.0,2.0,10,40,41,active

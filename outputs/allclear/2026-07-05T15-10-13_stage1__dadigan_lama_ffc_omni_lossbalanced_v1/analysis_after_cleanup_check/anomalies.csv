@@ -1,0 +1,4 @@
+severity,topic,message
+info,progress,当前日志到 epoch 50/200，结论只覆盖未完成训练。
+warn,loss_semantics,`gan_total` 在 adversarial/FM 权重为 0 时仍非零；这通常表示 perceptual/HRF 等项被归入 gan_total 命名桶，报告时不要把它解释成纯 GAN 损失。
+info,visual_proxy,最新可视化中这些 bucket 的 Stage1 RGB proxy MAE 未优于 cloudy 输入：high

@@ -1,0 +1,61 @@
+{
+  "run_dir": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-05T15-10-13_stage1__dadigan_lama_ffc_omni_lossbalanced_v1",
+  "checkpoint": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-05T15-10-13_stage1__dadigan_lama_ffc_omni_lossbalanced_v1/checkpoints/best_epoch_0014_recon_total_4.451390.pt",
+  "output_dir": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-05T15-10-13_stage1__dadigan_lama_ffc_omni_lossbalanced_v1/analysis_train_val_test/split_visuals",
+  "splits": [
+    {
+      "split": "train",
+      "seen": {
+        "low": 51,
+        "medium": 75,
+        "high": 113,
+        "heavy": 89
+      },
+      "saved": {
+        "low": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-05T15-10-13_stage1__dadigan_lama_ffc_omni_lossbalanced_v1/analysis_train_val_test/split_visuals/train/best_epoch_0014_recon_total_4.451390_train_low.png",
+        "medium": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-05T15-10-13_stage1__dadigan_lama_ffc_omni_lossbalanced_v1/analysis_train_val_test/split_visuals/train/best_epoch_0014_recon_total_4.451390_train_medium.png",
+        "high": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-05T15-10-13_stage1__dadigan_lama_ffc_omni_lossbalanced_v1/analysis_train_val_test/split_visuals/train/best_epoch_0014_recon_total_4.451390_train_high.png",
+        "heavy": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-05T15-10-13_stage1__dadigan_lama_ffc_omni_lossbalanced_v1/analysis_train_val_test/split_visuals/train/best_epoch_0014_recon_total_4.451390_train_heavy.png"
+      },
+      "requested_per_bucket": 3,
+      "candidate_pool_per_bucket": 50,
+      "selection": "top_target_rgb_gradient_contrast"
+    },
+    {
+      "split": "val",
+      "seen": {
+        "low": 45,
+        "medium": 90,
+        "high": 114,
+        "heavy": 97
+      },
+      "saved": {
+        "low": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-05T15-10-13_stage1__dadigan_lama_ffc_omni_lossbalanced_v1/analysis_train_val_test/split_visuals/val/best_epoch_0014_recon_total_4.451390_val_low.png",
+        "medium": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-05T15-10-13_stage1__dadigan_lama_ffc_omni_lossbalanced_v1/analysis_train_val_test/split_visuals/val/best_epoch_0014_recon_total_4.451390_val_medium.png",
+        "high": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-05T15-10-13_stage1__dadigan_lama_ffc_omni_lossbalanced_v1/analysis_train_val_test/split_visuals/val/best_epoch_0014_recon_total_4.451390_val_high.png",
+        "heavy": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-05T15-10-13_stage1__dadigan_lama_ffc_omni_lossbalanced_v1/analysis_train_val_test/split_visuals/val/best_epoch_0014_recon_total_4.451390_val_heavy.png"
+      },
+      "requested_per_bucket": 3,
+      "candidate_pool_per_bucket": 50,
+      "selection": "top_target_rgb_gradient_contrast"
+    },
+    {
+      "split": "test",
+      "seen": {
+        "low": 49,
+        "medium": 87,
+        "high": 103,
+        "heavy": 96
+      },
+      "saved": {
+        "low": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-05T15-10-13_stage1__dadigan_lama_ffc_omni_lossbalanced_v1/analysis_train_val_test/split_visuals/test/best_epoch_0014_recon_total_4.451390_test_low.png",
+        "medium": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-05T15-10-13_stage1__dadigan_lama_ffc_omni_lossbalanced_v1/analysis_train_val_test/split_visuals/test/best_epoch_0014_recon_total_4.451390_test_medium.png",
+        "high": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-05T15-10-13_stage1__dadigan_lama_ffc_omni_lossbalanced_v1/analysis_train_val_test/split_visuals/test/best_epoch_0014_recon_total_4.451390_test_high.png",
+        "heavy": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-05T15-10-13_stage1__dadigan_lama_ffc_omni_lossbalanced_v1/analysis_train_val_test/split_visuals/test/best_epoch_0014_recon_total_4.451390_test_heavy.png"
+      },
+      "requested_per_bucket": 3,
+      "candidate_pool_per_bucket": 50,
+      "selection": "top_target_rgb_gradient_contrast"
+    }
+  ]
+}

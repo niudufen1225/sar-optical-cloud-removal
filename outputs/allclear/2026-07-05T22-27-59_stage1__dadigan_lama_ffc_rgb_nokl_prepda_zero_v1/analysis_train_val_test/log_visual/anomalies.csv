@@ -1,0 +1,3 @@
+severity,topic,message
+info,progress,当前日志到 epoch 160/200，结论只覆盖未完成训练。
+info,discriminator,最近若干 epoch 的 real/fake logit 非常接近；判别器区分度弱或处于均衡状态，需要结合视觉和 loss 振荡判断。

@@ -1,0 +1,3 @@
+file,kind,epoch,metric,value,size_mb,mtime
+best_epoch_0151_pixel_total_3.316924.pt,best,151,pixel_total,3.316924,207.98033714294434,2026-07-06T11:12:17
+last.pt,last,160,last,,207.5574245452881,2026-07-06T11:57:40

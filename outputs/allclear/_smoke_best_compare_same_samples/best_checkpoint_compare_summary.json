@@ -1,0 +1,21 @@
+{
+  "reference_run": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-07T21-25-48_stage1__dadigan_lama_ffc_lowres_glfcr_spatial_main_v2",
+  "split": "test",
+  "buckets": [
+    "medium"
+  ],
+  "samples_per_bucket": 1,
+  "device": "cuda:0",
+  "runs": [
+    {
+      "label": "dadigan_lama...tial_main_v2",
+      "run_dir": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-07T21-25-48_stage1__dadigan_lama_ffc_lowres_glfcr_spatial_main_v2",
+      "checkpoint": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-07T21-25-48_stage1__dadigan_lama_ffc_lowres_glfcr_spatial_main_v2/checkpoints/best_epoch_0093_pixel_total_1.682863.pt",
+      "config": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-07T21-25-48_stage1__dadigan_lama_ffc_lowres_glfcr_spatial_main_v2/config.resolved.json"
+    }
+  ],
+  "skipped": [],
+  "saved": {
+    "medium": "/home/students/sushaoqi/CR/main/outputs/allclear/_smoke_best_compare_same_samples/test_medium_best_compare.png"
+  }
+}

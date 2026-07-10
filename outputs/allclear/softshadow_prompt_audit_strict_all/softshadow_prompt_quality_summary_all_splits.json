@@ -1,0 +1,2318 @@
+{
+  "train": {
+    "samples": 1951,
+    "metrics": {
+      "has_offline_division_mask": {
+        "mean": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "has_offline_bbox": {
+        "mean": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "cloud_frac": {
+        "mean": 0.4740602423874676,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "shadow_frac": {
+        "mean": 0.06703437285078666,
+        "min": 0.0,
+        "max": 0.78607177734375
+      },
+      "clear_frac": {
+        "mean": 0.4589053847617458,
+        "min": 0.0,
+        "max": 0.9899520874023438
+      },
+      "division_min": {
+        "mean": 0.00039798596244723536,
+        "min": 0.0,
+        "max": 0.27450981736183167
+      },
+      "division_max": {
+        "mean": 0.4097053332092944,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_mean": {
+        "mean": 0.0344292876659214,
+        "min": 0.0,
+        "max": 0.8051696419715881
+      },
+      "division_pos_frac": {
+        "mean": 0.1272278770552361,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_hard_frac": {
+        "mean": 0.012757168862222097,
+        "min": 0.0,
+        "max": 0.987030029296875
+      },
+      "division_soft_frac": {
+        "mean": 0.127210811613035,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_shadow_precision_dilated": {
+        "mean": 0.43472314680727725,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_shadow_recall": {
+        "mean": 0.5122406646914031,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_shadow_iou": {
+        "mean": 0.21629494286975107,
+        "min": 0.0,
+        "max": 0.9189949748743719
+      },
+      "division_cloud_leakage": {
+        "mean": 0.06628163013443591,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_clear_leakage": {
+        "mean": 0.13302254001739353,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_outside_bbox_frac": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "bbox_valid": {
+        "mean": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "bbox_x1": {
+        "mean": 18.14966683751922,
+        "min": 0.0,
+        "max": 248.0
+      },
+      "bbox_y1": {
+        "mean": 18.42696053305997,
+        "min": 0.0,
+        "max": 249.0
+      },
+      "bbox_x2": {
+        "mean": 236.23833931317273,
+        "min": 6.0,
+        "max": 255.0
+      },
+      "bbox_y2": {
+        "mean": 237.5463864684777,
+        "min": 7.0,
+        "max": 255.0
+      },
+      "bbox_area_frac": {
+        "mean": 0.7965284745428026,
+        "min": 0.0009613037109375,
+        "max": 1.0
+      },
+      "bbox_shadow_recall": {
+        "mean": 0.8877656418885749,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "bbox_division_recall": {
+        "mean": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "bbox_cloud_frac_inside": {
+        "mean": 0.4563774915261784,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "bbox_clear_frac_inside": {
+        "mean": 0.4613173583956071,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "boundary_iou": {
+        "mean": 0.025646269882903316,
+        "min": 0.0,
+        "max": 0.6221198156682027
+      },
+      "reference_target_mae_full": {
+        "mean": 0.010602422882795039,
+        "min": 0.0,
+        "max": 0.41433054208755493
+      },
+      "reference_target_mae_shadow": {
+        "mean": 0.05377197402848702,
+        "min": 0.0,
+        "max": 0.48507219223634357
+      },
+      "reference_target_mae_bbox": {
+        "mean": 0.013996743368448016,
+        "min": 0.0,
+        "max": 0.41433054208755493
+      },
+      "reference_target_corr_shadow": {
+        "mean": 0.7980138236096765,
+        "min": 0.0,
+        "max": 1.000000238418579
+      },
+      "online_target_mae_full": {
+        "mean": 0.010602422882795039,
+        "min": 0.0,
+        "max": 0.41433054208755493
+      },
+      "online_target_mae_shadow": {
+        "mean": 0.05377197402848702,
+        "min": 0.0,
+        "max": 0.48507219223634357
+      },
+      "online_target_mae_bbox": {
+        "mean": 0.013996743368448016,
+        "min": 0.0,
+        "max": 0.41433054208755493
+      },
+      "online_target_corr_shadow": {
+        "mean": 0.7980138236096765,
+        "min": 0.0,
+        "max": 1.000000238418579
+      }
+    },
+    "by_cloud_bucket": {
+      "low": {
+        "samples": 372,
+        "metrics": {
+          "has_offline_division_mask": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "has_offline_bbox": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "cloud_frac": {
+            "mean": 0.039354980632823,
+            "min": 0.0,
+            "max": 0.09918975830078125
+          },
+          "shadow_frac": {
+            "mean": 0.05961925752701298,
+            "min": 0.0,
+            "max": 0.78607177734375
+          },
+          "clear_frac": {
+            "mean": 0.901025761840164,
+            "min": 0.1532745361328125,
+            "max": 0.9899520874023438
+          },
+          "division_min": {
+            "mean": 0.0009276829459654388,
+            "min": 0.0,
+            "max": 0.27450981736183167
+          },
+          "division_max": {
+            "mean": 0.4921568670981033,
+            "min": 0.0,
+            "max": 0.9900000095367432
+          },
+          "division_mean": {
+            "mean": 0.047230033086302144,
+            "min": 0.0,
+            "max": 0.8051696419715881
+          },
+          "division_pos_frac": {
+            "mean": 0.1936187744140625,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_hard_frac": {
+            "mean": 0.015552274642452117,
+            "min": 0.0,
+            "max": 0.987030029296875
+          },
+          "division_soft_frac": {
+            "mean": 0.19361409833354334,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_precision_dilated": {
+            "mean": 0.31665744201994894,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_recall": {
+            "mean": 0.5045827292090495,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_iou": {
+            "mean": 0.16363445245496588,
+            "min": 0.0,
+            "max": 0.9148106904231625
+          },
+          "division_cloud_leakage": {
+            "mean": 0.09392107266819125,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_clear_leakage": {
+            "mean": 0.18104740615057102,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_outside_bbox_frac": {
+            "mean": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "bbox_valid": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "bbox_x1": {
+            "mean": 21.93010752688172,
+            "min": 0.0,
+            "max": 244.0
+          },
+          "bbox_y1": {
+            "mean": 22.432795698924732,
+            "min": 0.0,
+            "max": 235.0
+          },
+          "bbox_x2": {
+            "mean": 232.72043010752688,
+            "min": 7.0,
+            "max": 255.0
+          },
+          "bbox_y2": {
+            "mean": 232.5483870967742,
+            "min": 13.0,
+            "max": 255.0
+          },
+          "bbox_area_frac": {
+            "mean": 0.7471113717684181,
+            "min": 0.001220703125,
+            "max": 1.0
+          },
+          "bbox_shadow_recall": {
+            "mean": 0.8669472480240872,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "bbox_division_recall": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "bbox_cloud_frac_inside": {
+            "mean": 0.045336131262697345,
+            "min": 0.0,
+            "max": 0.9875
+          },
+          "bbox_clear_frac_inside": {
+            "mean": 0.8768314352199833,
+            "min": 0.0125,
+            "max": 1.0
+          },
+          "boundary_iou": {
+            "mean": 0.02186365544233589,
+            "min": 0.0,
+            "max": 0.4357476635514019
+          },
+          "reference_target_mae_full": {
+            "mean": 0.015533187442548951,
+            "min": 0.0,
+            "max": 0.41433054208755493
+          },
+          "reference_target_mae_shadow": {
+            "mean": 0.04553637986450657,
+            "min": 0.0,
+            "max": 0.422685753215443
+          },
+          "reference_target_mae_bbox": {
+            "mean": 0.01972694333559484,
+            "min": 0.0,
+            "max": 0.41433054208755493
+          },
+          "reference_target_corr_shadow": {
+            "mean": 0.8207632912874998,
+            "min": 0.0,
+            "max": 0.9999929666519165
+          },
+          "online_target_mae_full": {
+            "mean": 0.015533187442548951,
+            "min": 0.0,
+            "max": 0.41433054208755493
+          },
+          "online_target_mae_shadow": {
+            "mean": 0.04553637986450657,
+            "min": 0.0,
+            "max": 0.422685753215443
+          },
+          "online_target_mae_bbox": {
+            "mean": 0.01972694333559484,
+            "min": 0.0,
+            "max": 0.41433054208755493
+          },
+          "online_target_corr_shadow": {
+            "mean": 0.8207632912874998,
+            "min": 0.0,
+            "max": 0.9999929666519165
+          }
+        }
+      },
+      "medium": {
+        "samples": 534,
+        "metrics": {
+          "has_offline_division_mask": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "has_offline_bbox": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "cloud_frac": {
+            "mean": 0.23376156239027387,
+            "min": 0.1006011962890625,
+            "max": 0.399139404296875
+          },
+          "shadow_frac": {
+            "mean": 0.1091956306486094,
+            "min": 0.0,
+            "max": 0.712158203125
+          },
+          "clear_frac": {
+            "mean": 0.6570428069611167,
+            "min": 0.09239959716796875,
+            "max": 0.899078369140625
+          },
+          "division_min": {
+            "mean": 0.000492032024353631,
+            "min": 0.0,
+            "max": 0.20392157137393951
+          },
+          "division_max": {
+            "mean": 0.4938485034730997,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_mean": {
+            "mean": 0.04666121781937864,
+            "min": 0.0,
+            "max": 0.7878236770629883
+          },
+          "division_pos_frac": {
+            "mean": 0.17357252599594744,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_hard_frac": {
+            "mean": 0.017474770992436214,
+            "min": 0.0,
+            "max": 0.98675537109375
+          },
+          "division_soft_frac": {
+            "mean": 0.1735419798433111,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_precision_dilated": {
+            "mean": 0.5183186496211984,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_recall": {
+            "mean": 0.5750895418971673,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_iou": {
+            "mean": 0.2919799158209096,
+            "min": 0.0,
+            "max": 0.907792634532265
+          },
+          "division_cloud_leakage": {
+            "mean": 0.07735796149544581,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_clear_leakage": {
+            "mean": 0.1374429114035529,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_outside_bbox_frac": {
+            "mean": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "bbox_valid": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "bbox_x1": {
+            "mean": 12.923220973782772,
+            "min": 0.0,
+            "max": 248.0
+          },
+          "bbox_y1": {
+            "mean": 13.348314606741573,
+            "min": 0.0,
+            "max": 235.0
+          },
+          "bbox_x2": {
+            "mean": 239.77715355805245,
+            "min": 16.0,
+            "max": 255.0
+          },
+          "bbox_y2": {
+            "mean": 240.89138576779027,
+            "min": 22.0,
+            "max": 255.0
+          },
+          "bbox_area_frac": {
+            "mean": 0.8360315101423513,
+            "min": 0.001373291015625,
+            "max": 1.0
+          },
+          "bbox_shadow_recall": {
+            "mean": 0.9188236181432365,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "bbox_division_recall": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "bbox_cloud_frac_inside": {
+            "mean": 0.22908961603525713,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "bbox_clear_frac_inside": {
+            "mean": 0.6484803695916823,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "boundary_iou": {
+            "mean": 0.023945557784880906,
+            "min": 0.0,
+            "max": 0.41608750142417683
+          },
+          "reference_target_mae_full": {
+            "mean": 0.013160201872133495,
+            "min": 0.0,
+            "max": 0.34331566095352173
+          },
+          "reference_target_mae_shadow": {
+            "mean": 0.05081655358991251,
+            "min": 0.0,
+            "max": 0.44531452442992053
+          },
+          "reference_target_mae_bbox": {
+            "mean": 0.01589638645238978,
+            "min": 0.0,
+            "max": 0.34331566095352173
+          },
+          "reference_target_corr_shadow": {
+            "mean": 0.8455805616534274,
+            "min": 0.0,
+            "max": 1.0000001192092896
+          },
+          "online_target_mae_full": {
+            "mean": 0.013160201872133495,
+            "min": 0.0,
+            "max": 0.34331566095352173
+          },
+          "online_target_mae_shadow": {
+            "mean": 0.05081655358991251,
+            "min": 0.0,
+            "max": 0.44531452442992053
+          },
+          "online_target_mae_bbox": {
+            "mean": 0.01589638645238978,
+            "min": 0.0,
+            "max": 0.34331566095352173
+          },
+          "online_target_corr_shadow": {
+            "mean": 0.8455805616534274,
+            "min": 0.0,
+            "max": 1.0000001192092896
+          }
+        }
+      },
+      "high": {
+        "samples": 1045,
+        "metrics": {
+          "has_offline_division_mask": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "has_offline_bbox": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "cloud_frac": {
+            "mean": 0.7516007710872085,
+            "min": 0.4000244140625,
+            "max": 1.0
+          },
+          "shadow_frac": {
+            "mean": 0.0481294075267737,
+            "min": 0.0,
+            "max": 0.486602783203125
+          },
+          "clear_frac": {
+            "mean": 0.20026982138601787,
+            "min": 0.0,
+            "max": 0.591033935546875
+          },
+          "division_min": {
+            "mean": 0.0001613659864407407,
+            "min": 0.0,
+            "max": 0.16862745583057404
+          },
+          "division_max": {
+            "mean": 0.3373566025609605,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_mean": {
+            "mean": 0.023621892452210583,
+            "min": 0.0,
+            "max": 0.7870069742202759
+          },
+          "division_pos_frac": {
+            "mean": 0.07991165088124252,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_hard_frac": {
+            "mean": 0.009351447438509271,
+            "min": 0.0,
+            "max": 0.9832916259765625
+          },
+          "division_soft_frac": {
+            "mean": 0.07989706377093302,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_precision_dilated": {
+            "mean": 0.43565228511330134,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_recall": {
+            "mean": 0.468460334199558,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_iou": {
+            "mean": 0.18965671466090625,
+            "min": 0.0,
+            "max": 0.9189949748743719
+          },
+          "division_cloud_leakage": {
+            "mean": 0.05136434225539879,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_clear_leakage": {
+            "mean": 0.10682340980787176,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_outside_bbox_frac": {
+            "mean": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "bbox_valid": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "bbox_x1": {
+            "mean": 19.474641148325357,
+            "min": 0.0,
+            "max": 248.0
+          },
+          "bbox_y1": {
+            "mean": 19.59617224880383,
+            "min": 0.0,
+            "max": 249.0
+          },
+          "bbox_x2": {
+            "mean": 235.68229665071772,
+            "min": 6.0,
+            "max": 255.0
+          },
+          "bbox_y2": {
+            "mean": 237.61626794258373,
+            "min": 7.0,
+            "max": 255.0
+          },
+          "bbox_area_frac": {
+            "mean": 0.793933777147503,
+            "min": 0.0009613037109375,
+            "max": 1.0
+          },
+          "bbox_shadow_recall": {
+            "mean": 0.8748016305065353,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "bbox_division_recall": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "bbox_cloud_frac_inside": {
+            "mean": 0.7188455408373439,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "bbox_clear_frac_inside": {
+            "mean": 0.21776110523065773,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "boundary_iou": {
+            "mean": 0.02878769823432644,
+            "min": 0.0,
+            "max": 0.6221198156682027
+          },
+          "reference_target_mae_full": {
+            "mean": 0.007540127766493421,
+            "min": 0.0,
+            "max": 0.20229092240333557
+          },
+          "reference_target_mae_shadow": {
+            "mean": 0.06023804405069062,
+            "min": 0.0,
+            "max": 0.48507219223634357
+          },
+          "reference_target_mae_bbox": {
+            "mean": 0.010986175143947024,
+            "min": 0.0,
+            "max": 0.20229092240333557
+          },
+          "reference_target_corr_shadow": {
+            "mean": 0.7499058468143145,
+            "min": 0.0,
+            "max": 1.000000238418579
+          },
+          "online_target_mae_full": {
+            "mean": 0.007540127766493421,
+            "min": 0.0,
+            "max": 0.20229092240333557
+          },
+          "online_target_mae_shadow": {
+            "mean": 0.06023804405069062,
+            "min": 0.0,
+            "max": 0.48507219223634357
+          },
+          "online_target_mae_bbox": {
+            "mean": 0.010986175143947024,
+            "min": 0.0,
+            "max": 0.20229092240333557
+          },
+          "online_target_corr_shadow": {
+            "mean": 0.7499058468143145,
+            "min": 0.0,
+            "max": 1.000000238418579
+          }
+        }
+      }
+    },
+    "config": "/home/students/sushaoqi/CR/main/configs/allclear_semantic_softshadow_dadigan_stage1.yaml",
+    "split": "train",
+    "bbox_space": "sam_input",
+    "sam_input_size": 1024,
+    "thresholds": {
+      "positive": 0.05,
+      "hard": 0.5
+    },
+    "reference_target": {
+      "mode": "paper_ratio",
+      "low_pass_kernel": 5,
+      "division_threshold": 0.05
+    },
+    "fallbacks": {
+      "online_mask": false,
+      "bbox_from_mask": false
+    },
+    "visualizations": {
+      "saved_by_cloud_bucket": {
+        "medium": 3,
+        "low": 3
+      },
+      "visual_samples_per_bucket": 3,
+      "visual_buckets": [
+        "low",
+        "medium"
+      ],
+      "min_visual_shadow_frac": 0.002,
+      "min_visual_division_pos_frac": 0.0
+    }
+  },
+  "val": {
+    "samples": 252,
+    "metrics": {
+      "has_offline_division_mask": {
+        "mean": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "has_offline_bbox": {
+        "mean": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "cloud_frac": {
+        "mean": 0.45106070382254465,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "shadow_frac": {
+        "mean": 0.0702032967219277,
+        "min": 0.0,
+        "max": 0.611358642578125
+      },
+      "clear_frac": {
+        "mean": 0.47873599945552764,
+        "min": 0.0,
+        "max": 0.9865264892578125
+      },
+      "division_min": {
+        "mean": 0.0002178649255444133,
+        "min": 0.0,
+        "max": 0.054901961237192154
+      },
+      "division_max": {
+        "mean": 0.41795751949151355,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_mean": {
+        "mean": 0.0331474301103934,
+        "min": 0.0,
+        "max": 0.4887821674346924
+      },
+      "division_pos_frac": {
+        "mean": 0.12076138693188863,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_hard_frac": {
+        "mean": 0.01129792228577629,
+        "min": 0.0,
+        "max": 0.5843658447265625
+      },
+      "division_soft_frac": {
+        "mean": 0.12074304005456349,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_shadow_precision_dilated": {
+        "mean": 0.4241885804248493,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_shadow_recall": {
+        "mean": 0.49531459660888233,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_shadow_iou": {
+        "mean": 0.20961000052654613,
+        "min": 0.0,
+        "max": 0.8377906195403844
+      },
+      "division_cloud_leakage": {
+        "mean": 0.05056940962919179,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_clear_leakage": {
+        "mean": 0.12295801913542435,
+        "min": 0.0,
+        "max": 0.9968746382683181
+      },
+      "division_outside_bbox_frac": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "bbox_valid": {
+        "mean": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "bbox_x1": {
+        "mean": 16.563492063492063,
+        "min": 0.0,
+        "max": 243.0
+      },
+      "bbox_y1": {
+        "mean": 16.583333333333332,
+        "min": 0.0,
+        "max": 247.0
+      },
+      "bbox_x2": {
+        "mean": 235.84126984126985,
+        "min": 18.0,
+        "max": 255.0
+      },
+      "bbox_y2": {
+        "mean": 232.61904761904762,
+        "min": 9.0,
+        "max": 255.0
+      },
+      "bbox_area_frac": {
+        "mean": 0.7929296342153398,
+        "min": 0.00152587890625,
+        "max": 1.0
+      },
+      "bbox_shadow_recall": {
+        "mean": 0.8895320452803134,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "bbox_division_recall": {
+        "mean": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "bbox_cloud_frac_inside": {
+        "mean": 0.4386984211007309,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "bbox_clear_frac_inside": {
+        "mean": 0.47697294636791465,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "boundary_iou": {
+        "mean": 0.027631855699289394,
+        "min": 0.0,
+        "max": 0.4320652173913043
+      },
+      "reference_target_mae_full": {
+        "mean": 0.010565332972514769,
+        "min": 0.0,
+        "max": 0.297099769115448
+      },
+      "reference_target_mae_shadow": {
+        "mean": 0.05851863449502244,
+        "min": 0.0,
+        "max": 0.4301570105174231
+      },
+      "reference_target_mae_bbox": {
+        "mean": 0.014461172056540331,
+        "min": 0.0,
+        "max": 0.297099769115448
+      },
+      "reference_target_corr_shadow": {
+        "mean": 0.7636221856861324,
+        "min": 0.0,
+        "max": 0.9999998211860657
+      },
+      "online_target_mae_full": {
+        "mean": 0.010565332972514769,
+        "min": 0.0,
+        "max": 0.297099769115448
+      },
+      "online_target_mae_shadow": {
+        "mean": 0.05851863449502244,
+        "min": 0.0,
+        "max": 0.4301570105174231
+      },
+      "online_target_mae_bbox": {
+        "mean": 0.014461172056540331,
+        "min": 0.0,
+        "max": 0.297099769115448
+      },
+      "online_target_corr_shadow": {
+        "mean": 0.7636221856861324,
+        "min": 0.0,
+        "max": 0.9999998211860657
+      }
+    },
+    "by_cloud_bucket": {
+      "low": {
+        "samples": 50,
+        "metrics": {
+          "has_offline_division_mask": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "has_offline_bbox": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "cloud_frac": {
+            "mean": 0.03865036010742187,
+            "min": 0.0,
+            "max": 0.099212646484375
+          },
+          "shadow_frac": {
+            "mean": 0.05698829650878906,
+            "min": 0.0,
+            "max": 0.4223785400390625
+          },
+          "clear_frac": {
+            "mean": 0.904361343383789,
+            "min": 0.577392578125,
+            "max": 0.9865264892578125
+          },
+          "division_min": {
+            "mean": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "division_max": {
+            "mean": 0.4578705888986587,
+            "min": 0.0,
+            "max": 0.9599999785423279
+          },
+          "division_mean": {
+            "mean": 0.0345729784179639,
+            "min": 0.0,
+            "max": 0.23104596138000488
+          },
+          "division_pos_frac": {
+            "mean": 0.15619903564453125,
+            "min": 0.0,
+            "max": 0.9971160888671875
+          },
+          "division_hard_frac": {
+            "mean": 0.0038873291015625,
+            "min": 0.0,
+            "max": 0.0343017578125
+          },
+          "division_soft_frac": {
+            "mean": 0.15618804931640626,
+            "min": 0.0,
+            "max": 0.9971160888671875
+          },
+          "division_shadow_precision_dilated": {
+            "mean": 0.3337593261271306,
+            "min": 0.0,
+            "max": 0.9087203377493085
+          },
+          "division_shadow_recall": {
+            "mean": 0.48796115912953636,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_iou": {
+            "mean": 0.17588369524043865,
+            "min": 0.0,
+            "max": 0.6816493313521546
+          },
+          "division_cloud_leakage": {
+            "mean": 0.03951448920800803,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_clear_leakage": {
+            "mean": 0.14681845161238136,
+            "min": 0.0,
+            "max": 0.9968746382683181
+          },
+          "division_outside_bbox_frac": {
+            "mean": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "bbox_valid": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "bbox_x1": {
+            "mean": 23.88,
+            "min": 0.0,
+            "max": 219.0
+          },
+          "bbox_y1": {
+            "mean": 15.64,
+            "min": 0.0,
+            "max": 204.0
+          },
+          "bbox_x2": {
+            "mean": 233.66,
+            "min": 41.0,
+            "max": 255.0
+          },
+          "bbox_y2": {
+            "mean": 233.14,
+            "min": 9.0,
+            "max": 255.0
+          },
+          "bbox_area_frac": {
+            "mean": 0.7724847412109375,
+            "min": 0.0018310546875,
+            "max": 1.0
+          },
+          "bbox_shadow_recall": {
+            "mean": 0.8664225624458975,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "bbox_division_recall": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "bbox_cloud_frac_inside": {
+            "mean": 0.03581644566562642,
+            "min": 0.0,
+            "max": 0.10671612394957983
+          },
+          "bbox_clear_frac_inside": {
+            "mean": 0.8860678181758773,
+            "min": 0.44805194805194803,
+            "max": 1.0
+          },
+          "boundary_iou": {
+            "mean": 0.04208413952559303,
+            "min": 0.0,
+            "max": 0.4320652173913043
+          },
+          "reference_target_mae_full": {
+            "mean": 0.008384245584493329,
+            "min": 0.0,
+            "max": 0.13681453466415405
+          },
+          "reference_target_mae_shadow": {
+            "mean": 0.07066716354245124,
+            "min": 0.0,
+            "max": 0.4301570105174231
+          },
+          "reference_target_mae_bbox": {
+            "mean": 0.011677126663094341,
+            "min": 0.0,
+            "max": 0.13681453466415405
+          },
+          "reference_target_corr_shadow": {
+            "mean": 0.7316189902584728,
+            "min": 0.0,
+            "max": 0.9999914169311523
+          },
+          "online_target_mae_full": {
+            "mean": 0.008384245584493329,
+            "min": 0.0,
+            "max": 0.13681453466415405
+          },
+          "online_target_mae_shadow": {
+            "mean": 0.07066716354245124,
+            "min": 0.0,
+            "max": 0.4301570105174231
+          },
+          "online_target_mae_bbox": {
+            "mean": 0.011677126663094341,
+            "min": 0.0,
+            "max": 0.13681453466415405
+          },
+          "online_target_corr_shadow": {
+            "mean": 0.7316189902584728,
+            "min": 0.0,
+            "max": 0.9999914169311523
+          }
+        }
+      },
+      "medium": {
+        "samples": 77,
+        "metrics": {
+          "has_offline_division_mask": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "has_offline_bbox": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "cloud_frac": {
+            "mean": 0.2400179776278409,
+            "min": 0.1083221435546875,
+            "max": 0.38421630859375
+          },
+          "shadow_frac": {
+            "mean": 0.11599429242022626,
+            "min": 0.0,
+            "max": 0.611358642578125
+          },
+          "clear_frac": {
+            "mean": 0.6439877299519329,
+            "min": 0.1907501220703125,
+            "max": 0.88623046875
+          },
+          "division_min": {
+            "mean": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "division_max": {
+            "mean": 0.4857321170630393,
+            "min": 0.0,
+            "max": 0.9900000095367432
+          },
+          "division_mean": {
+            "mean": 0.04249431729679942,
+            "min": 0.0,
+            "max": 0.4887821674346924
+          },
+          "division_pos_frac": {
+            "mean": 0.150487131886668,
+            "min": 0.0,
+            "max": 0.8377227783203125
+          },
+          "division_hard_frac": {
+            "mean": 0.018501380821327112,
+            "min": 0.0,
+            "max": 0.5843658447265625
+          },
+          "division_soft_frac": {
+            "mean": 0.15047326026024757,
+            "min": 0.0,
+            "max": 0.836822509765625
+          },
+          "division_shadow_precision_dilated": {
+            "mean": 0.48403364632819185,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_recall": {
+            "mean": 0.48294046214933317,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_iou": {
+            "mean": 0.2382033556712456,
+            "min": 0.0,
+            "max": 0.8377906195403844
+          },
+          "division_cloud_leakage": {
+            "mean": 0.0546497656992931,
+            "min": 0.0,
+            "max": 0.3589101158784842
+          },
+          "division_clear_leakage": {
+            "mean": 0.12466307438447634,
+            "min": 0.0,
+            "max": 0.9652100045369861
+          },
+          "division_outside_bbox_frac": {
+            "mean": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "bbox_valid": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "bbox_x1": {
+            "mean": 16.92207792207792,
+            "min": 0.0,
+            "max": 243.0
+          },
+          "bbox_y1": {
+            "mean": 19.246753246753247,
+            "min": 0.0,
+            "max": 232.0
+          },
+          "bbox_x2": {
+            "mean": 238.5064935064935,
+            "min": 33.0,
+            "max": 255.0
+          },
+          "bbox_y2": {
+            "mean": 231.6883116883117,
+            "min": 41.0,
+            "max": 255.0
+          },
+          "bbox_area_frac": {
+            "mean": 0.7885468718293426,
+            "min": 0.00152587890625,
+            "max": 1.0
+          },
+          "bbox_shadow_recall": {
+            "mean": 0.896615067619186,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "bbox_division_recall": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "bbox_cloud_frac_inside": {
+            "mean": 0.23030318730417232,
+            "min": 0.0,
+            "max": 0.9375
+          },
+          "bbox_clear_frac_inside": {
+            "mean": 0.6327870685038423,
+            "min": 0.0625,
+            "max": 1.0
+          },
+          "boundary_iou": {
+            "mean": 0.018709329326167347,
+            "min": 0.0,
+            "max": 0.18161290322580645
+          },
+          "reference_target_mae_full": {
+            "mean": 0.013092451516773249,
+            "min": 0.0,
+            "max": 0.297099769115448
+          },
+          "reference_target_mae_shadow": {
+            "mean": 0.04186046609597146,
+            "min": 0.0,
+            "max": 0.27955113781427005
+          },
+          "reference_target_mae_bbox": {
+            "mean": 0.017300067085845115,
+            "min": 0.0,
+            "max": 0.297099769115448
+          },
+          "reference_target_corr_shadow": {
+            "mean": 0.79400053182069,
+            "min": 0.0,
+            "max": 0.9999998211860657
+          },
+          "online_target_mae_full": {
+            "mean": 0.013092451516773249,
+            "min": 0.0,
+            "max": 0.297099769115448
+          },
+          "online_target_mae_shadow": {
+            "mean": 0.04186046609597146,
+            "min": 0.0,
+            "max": 0.27955113781427005
+          },
+          "online_target_mae_bbox": {
+            "mean": 0.017300067085845115,
+            "min": 0.0,
+            "max": 0.297099769115448
+          },
+          "online_target_corr_shadow": {
+            "mean": 0.79400053182069,
+            "min": 0.0,
+            "max": 0.9999998211860657
+          }
+        }
+      },
+      "high": {
+        "samples": 125,
+        "metrics": {
+          "has_offline_division_mask": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "has_offline_bbox": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "cloud_frac": {
+            "mean": 0.7460271606445312,
+            "min": 0.40216064453125,
+            "max": 1.0
+          },
+          "shadow_frac": {
+            "mean": 0.04728204345703125,
+            "min": 0.0,
+            "max": 0.2445220947265625
+          },
+          "clear_frac": {
+            "mean": 0.2066907958984375,
+            "min": 0.0,
+            "max": 0.5693817138671875
+          },
+          "division_min": {
+            "mean": 0.0004392156898975372,
+            "min": 0.0,
+            "max": 0.054901961237192154
+          },
+          "division_max": {
+            "mean": 0.36024313962459564,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_mean": {
+            "mean": 0.026819528280539087,
+            "min": 0.0,
+            "max": 0.35564470291137695
+          },
+          "division_pos_frac": {
+            "mean": 0.0882752685546875,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_hard_frac": {
+            "mean": 0.0098248291015625,
+            "min": 0.0,
+            "max": 0.1899566650390625
+          },
+          "division_soft_frac": {
+            "mean": 0.088251220703125,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_precision_dilated": {
+            "mean": 0.42305400507654,
+            "min": 0.0,
+            "max": 0.9979905267690541
+          },
+          "division_shadow_recall": {
+            "mean": 0.5108589954924212,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_iou": {
+            "mean": 0.20339483066648603,
+            "min": 0.0,
+            "max": 0.783079954954955
+          },
+          "division_cloud_leakage": {
+            "mean": 0.05212412100500499,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_clear_leakage": {
+            "mean": 0.10901790462989967,
+            "min": 0.0,
+            "max": 0.864857881136951
+          },
+          "division_outside_bbox_frac": {
+            "mean": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "bbox_valid": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "bbox_x1": {
+            "mean": 13.416,
+            "min": 0.0,
+            "max": 219.0
+          },
+          "bbox_y1": {
+            "mean": 15.32,
+            "min": 0.0,
+            "max": 247.0
+          },
+          "bbox_x2": {
+            "mean": 235.072,
+            "min": 18.0,
+            "max": 255.0
+          },
+          "bbox_y2": {
+            "mean": 232.984,
+            "min": 42.0,
+            "max": 255.0
+          },
+          "bbox_area_frac": {
+            "mean": 0.803807373046875,
+            "min": 0.001983642578125,
+            "max": 1.0
+          },
+          "bbox_shadow_recall": {
+            "mean": 0.8961395150100705,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "bbox_division_recall": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "bbox_cloud_frac_inside": {
+            "mean": 0.7282226752934527,
+            "min": 0.017374517374517374,
+            "max": 1.0
+          },
+          "bbox_clear_frac_inside": {
+            "mean": 0.21735349840899798,
+            "min": 0.0,
+            "max": 0.9305019305019305
+          },
+          "boundary_iou": {
+            "mean": 0.027276139906788628,
+            "min": 0.0,
+            "max": 0.2527805864509606
+          },
+          "reference_target_mae_full": {
+            "mean": 0.009881062904460123,
+            "min": 0.0,
+            "max": 0.12504833936691284
+          },
+          "reference_target_mae_shadow": {
+            "mean": 0.06693102951047449,
+            "min": 0.0,
+            "max": 0.38315253529122206
+          },
+          "reference_target_mae_bbox": {
+            "mean": 0.013826030875866981,
+            "min": 0.0,
+            "max": 0.153590225829041
+          },
+          "reference_target_corr_shadow": {
+            "mean": 0.7532989456229013,
+            "min": 0.0,
+            "max": 0.9999892711639404
+          },
+          "online_target_mae_full": {
+            "mean": 0.009881062904460123,
+            "min": 0.0,
+            "max": 0.12504833936691284
+          },
+          "online_target_mae_shadow": {
+            "mean": 0.06693102951047449,
+            "min": 0.0,
+            "max": 0.38315253529122206
+          },
+          "online_target_mae_bbox": {
+            "mean": 0.013826030875866981,
+            "min": 0.0,
+            "max": 0.153590225829041
+          },
+          "online_target_corr_shadow": {
+            "mean": 0.7532989456229013,
+            "min": 0.0,
+            "max": 0.9999892711639404
+          }
+        }
+      }
+    },
+    "config": "/home/students/sushaoqi/CR/main/configs/allclear_semantic_softshadow_dadigan_stage1.yaml",
+    "split": "val",
+    "bbox_space": "sam_input",
+    "sam_input_size": 1024,
+    "thresholds": {
+      "positive": 0.05,
+      "hard": 0.5
+    },
+    "reference_target": {
+      "mode": "paper_ratio",
+      "low_pass_kernel": 5,
+      "division_threshold": 0.05
+    },
+    "fallbacks": {
+      "online_mask": false,
+      "bbox_from_mask": false
+    },
+    "visualizations": {
+      "saved_by_cloud_bucket": {
+        "medium": 3,
+        "low": 3
+      },
+      "visual_samples_per_bucket": 3,
+      "visual_buckets": [
+        "low",
+        "medium"
+      ],
+      "min_visual_shadow_frac": 0.002,
+      "min_visual_division_pos_frac": 0.0
+    }
+  },
+  "test": {
+    "samples": 251,
+    "metrics": {
+      "has_offline_division_mask": {
+        "mean": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "has_offline_bbox": {
+        "mean": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "cloud_frac": {
+        "mean": 0.4333372686013757,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "shadow_frac": {
+        "mean": 0.06297232335307208,
+        "min": 0.0,
+        "max": 0.5801315307617188
+      },
+      "clear_frac": {
+        "mean": 0.5036904080455522,
+        "min": 0.0,
+        "max": 0.9882659912109375
+      },
+      "division_min": {
+        "mean": 0.000578079862423627,
+        "min": 0.0,
+        "max": 0.14509804546833038
+      },
+      "division_max": {
+        "mean": 0.4306538584697769,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_mean": {
+        "mean": 0.03881691813569296,
+        "min": 0.0,
+        "max": 0.6466457843780518
+      },
+      "division_pos_frac": {
+        "mean": 0.13239200181695093,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_hard_frac": {
+        "mean": 0.02005655357087276,
+        "min": 0.0,
+        "max": 0.7561492919921875
+      },
+      "division_soft_frac": {
+        "mean": 0.13233412784409238,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_shadow_precision_dilated": {
+        "mean": 0.36916425356304156,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_shadow_recall": {
+        "mean": 0.5061133815042441,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_shadow_iou": {
+        "mean": 0.1886056243435079,
+        "min": 0.0,
+        "max": 0.7857366476739089
+      },
+      "division_cloud_leakage": {
+        "mean": 0.07970748033813334,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_clear_leakage": {
+        "mean": 0.1384261156900995,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "division_outside_bbox_frac": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "bbox_valid": {
+        "mean": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "bbox_x1": {
+        "mean": 20.60159362549801,
+        "min": 0.0,
+        "max": 240.0
+      },
+      "bbox_y1": {
+        "mean": 21.60159362549801,
+        "min": 0.0,
+        "max": 248.0
+      },
+      "bbox_x2": {
+        "mean": 237.06374501992033,
+        "min": 9.0,
+        "max": 255.0
+      },
+      "bbox_y2": {
+        "mean": 234.96812749003985,
+        "min": 6.0,
+        "max": 255.0
+      },
+      "bbox_area_frac": {
+        "mean": 0.7760184846551295,
+        "min": 0.00128173828125,
+        "max": 1.0
+      },
+      "bbox_shadow_recall": {
+        "mean": 0.8754674941804945,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "bbox_division_recall": {
+        "mean": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "bbox_cloud_frac_inside": {
+        "mean": 0.41430353390643593,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "bbox_clear_frac_inside": {
+        "mean": 0.5085642179613825,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "boundary_iou": {
+        "mean": 0.028797780505950273,
+        "min": 0.0,
+        "max": 0.3920595533498759
+      },
+      "reference_target_mae_full": {
+        "mean": 0.015573803109974103,
+        "min": 0.0,
+        "max": 0.3930634558200836
+      },
+      "reference_target_mae_shadow": {
+        "mean": 0.05993075888613482,
+        "min": 0.0,
+        "max": 0.4539864989139574
+      },
+      "reference_target_mae_bbox": {
+        "mean": 0.019254319869302816,
+        "min": 0.0,
+        "max": 0.3930634558200836
+      },
+      "reference_target_corr_shadow": {
+        "mean": 0.8116852739278008,
+        "min": 0.0,
+        "max": 0.9999975562095642
+      },
+      "online_target_mae_full": {
+        "mean": 0.015573803109974103,
+        "min": 0.0,
+        "max": 0.3930634558200836
+      },
+      "online_target_mae_shadow": {
+        "mean": 0.05993075888613482,
+        "min": 0.0,
+        "max": 0.4539864989139574
+      },
+      "online_target_mae_bbox": {
+        "mean": 0.019254319869302816,
+        "min": 0.0,
+        "max": 0.3930634558200836
+      },
+      "online_target_corr_shadow": {
+        "mean": 0.8116852739278008,
+        "min": 0.0,
+        "max": 0.9999975562095642
+      }
+    },
+    "by_cloud_bucket": {
+      "low": {
+        "samples": 54,
+        "metrics": {
+          "has_offline_division_mask": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "has_offline_bbox": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "cloud_frac": {
+            "mean": 0.03612588953088831,
+            "min": 0.0,
+            "max": 0.0995025634765625
+          },
+          "shadow_frac": {
+            "mean": 0.04122409114131221,
+            "min": 0.0,
+            "max": 0.24538421630859375
+          },
+          "clear_frac": {
+            "mean": 0.9226500193277994,
+            "min": 0.6901817321777344,
+            "max": 0.9882659912109375
+          },
+          "division_min": {
+            "mean": 0.002687000842006118,
+            "min": 0.0,
+            "max": 0.14509804546833038
+          },
+          "division_max": {
+            "mean": 0.49340958893299103,
+            "min": 0.0,
+            "max": 0.9900000095367432
+          },
+          "division_mean": {
+            "mean": 0.04599235123566393,
+            "min": 0.0,
+            "max": 0.590298056602478
+          },
+          "division_pos_frac": {
+            "mean": 0.17902148211443866,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_hard_frac": {
+            "mean": 0.026394314236111112,
+            "min": 0.0,
+            "max": 0.7286376953125
+          },
+          "division_soft_frac": {
+            "mean": 0.17900622332537616,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_precision_dilated": {
+            "mean": 0.21768627031205234,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_recall": {
+            "mean": 0.46698138344367246,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_iou": {
+            "mean": 0.1118986976009883,
+            "min": 0.0,
+            "max": 0.6827586206896552
+          },
+          "division_cloud_leakage": {
+            "mean": 0.13719763213436165,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_clear_leakage": {
+            "mean": 0.17139955406327617,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_outside_bbox_frac": {
+            "mean": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "bbox_valid": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "bbox_x1": {
+            "mean": 22.185185185185187,
+            "min": 0.0,
+            "max": 203.0
+          },
+          "bbox_y1": {
+            "mean": 20.51851851851852,
+            "min": 0.0,
+            "max": 203.0
+          },
+          "bbox_x2": {
+            "mean": 233.42592592592592,
+            "min": 23.0,
+            "max": 255.0
+          },
+          "bbox_y2": {
+            "mean": 230.6851851851852,
+            "min": 12.0,
+            "max": 255.0
+          },
+          "bbox_area_frac": {
+            "mean": 0.767330876103154,
+            "min": 0.00238037109375,
+            "max": 1.0
+          },
+          "bbox_shadow_recall": {
+            "mean": 0.8611068466381891,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "bbox_division_recall": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "bbox_cloud_frac_inside": {
+            "mean": 0.030689840860331486,
+            "min": 0.0,
+            "max": 0.16223832528180354
+          },
+          "bbox_clear_frac_inside": {
+            "mean": 0.90702330599211,
+            "min": 0.21846153846153846,
+            "max": 1.0
+          },
+          "boundary_iou": {
+            "mean": 0.02553667291885089,
+            "min": 0.0,
+            "max": 0.2849462365591398
+          },
+          "reference_target_mae_full": {
+            "mean": 0.01344648410886967,
+            "min": 0.0,
+            "max": 0.24578174948692322
+          },
+          "reference_target_mae_shadow": {
+            "mean": 0.05791000077400153,
+            "min": 0.0,
+            "max": 0.4539864989139574
+          },
+          "reference_target_mae_bbox": {
+            "mean": 0.01602833538603991,
+            "min": 0.0,
+            "max": 0.24578174948692322
+          },
+          "reference_target_corr_shadow": {
+            "mean": 0.7999371081590653,
+            "min": 0.0,
+            "max": 0.9999918937683105
+          },
+          "online_target_mae_full": {
+            "mean": 0.01344648410886967,
+            "min": 0.0,
+            "max": 0.24578174948692322
+          },
+          "online_target_mae_shadow": {
+            "mean": 0.05791000077400153,
+            "min": 0.0,
+            "max": 0.4539864989139574
+          },
+          "online_target_mae_bbox": {
+            "mean": 0.01602833538603991,
+            "min": 0.0,
+            "max": 0.24578174948692322
+          },
+          "online_target_corr_shadow": {
+            "mean": 0.7999371081590653,
+            "min": 0.0,
+            "max": 0.9999918937683105
+          }
+        }
+      },
+      "medium": {
+        "samples": 78,
+        "metrics": {
+          "has_offline_division_mask": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "has_offline_bbox": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "cloud_frac": {
+            "mean": 0.23942076854216746,
+            "min": 0.10223388671875,
+            "max": 0.3995513916015625
+          },
+          "shadow_frac": {
+            "mean": 0.10351200592823517,
+            "min": 0.0,
+            "max": 0.5801315307617188
+          },
+          "clear_frac": {
+            "mean": 0.6570672255295974,
+            "min": 0.1153106689453125,
+            "max": 0.893402099609375
+          },
+          "division_min": {
+            "mean": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "division_max": {
+            "mean": 0.47686023475267947,
+            "min": 0.0,
+            "max": 0.9900000095367432
+          },
+          "division_mean": {
+            "mean": 0.058500789010167864,
+            "min": 0.0,
+            "max": 0.6466457843780518
+          },
+          "division_pos_frac": {
+            "mean": 0.18403058174328926,
+            "min": 0.0,
+            "max": 0.905609130859375
+          },
+          "division_hard_frac": {
+            "mean": 0.031176444811698716,
+            "min": 0.0,
+            "max": 0.7561492919921875
+          },
+          "division_soft_frac": {
+            "mean": 0.18386293068910256,
+            "min": 0.0,
+            "max": 0.905609130859375
+          },
+          "division_shadow_precision_dilated": {
+            "mean": 0.4178906270824293,
+            "min": 0.0,
+            "max": 0.985617238085129
+          },
+          "division_shadow_recall": {
+            "mean": 0.5304676375417228,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_iou": {
+            "mean": 0.24586600492528132,
+            "min": 0.0,
+            "max": 0.7857366476739089
+          },
+          "division_cloud_leakage": {
+            "mean": 0.09556978834255063,
+            "min": 0.0,
+            "max": 0.9931288876030667
+          },
+          "division_clear_leakage": {
+            "mean": 0.15317705749313554,
+            "min": 0.0,
+            "max": 0.9986014282384353
+          },
+          "division_outside_bbox_frac": {
+            "mean": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "bbox_valid": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "bbox_x1": {
+            "mean": 20.141025641025642,
+            "min": 0.0,
+            "max": 240.0
+          },
+          "bbox_y1": {
+            "mean": 25.55128205128205,
+            "min": 0.0,
+            "max": 248.0
+          },
+          "bbox_x2": {
+            "mean": 234.85897435897436,
+            "min": 9.0,
+            "max": 255.0
+          },
+          "bbox_y2": {
+            "mean": 232.65384615384616,
+            "min": 6.0,
+            "max": 255.0
+          },
+          "bbox_area_frac": {
+            "mean": 0.7714337079952924,
+            "min": 0.00128173828125,
+            "max": 1.0
+          },
+          "bbox_shadow_recall": {
+            "mean": 0.8603149535029955,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "bbox_division_recall": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "bbox_cloud_frac_inside": {
+            "mean": 0.24183087244264856,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "bbox_clear_frac_inside": {
+            "mean": 0.6506545270835395,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "boundary_iou": {
+            "mean": 0.02725560749936928,
+            "min": 0.0,
+            "max": 0.3920595533498759
+          },
+          "reference_target_mae_full": {
+            "mean": 0.026606599620625577,
+            "min": 0.0,
+            "max": 0.3930634558200836
+          },
+          "reference_target_mae_shadow": {
+            "mean": 0.052453414855299155,
+            "min": 0.0,
+            "max": 0.3792933563687908
+          },
+          "reference_target_mae_bbox": {
+            "mean": 0.03081634335191759,
+            "min": 0.0,
+            "max": 0.3930634558200836
+          },
+          "reference_target_corr_shadow": {
+            "mean": 0.8124435748904943,
+            "min": 0.0,
+            "max": 0.9999975562095642
+          },
+          "online_target_mae_full": {
+            "mean": 0.026606599620625577,
+            "min": 0.0,
+            "max": 0.3930634558200836
+          },
+          "online_target_mae_shadow": {
+            "mean": 0.052453414855299155,
+            "min": 0.0,
+            "max": 0.3792933563687908
+          },
+          "online_target_mae_bbox": {
+            "mean": 0.03081634335191759,
+            "min": 0.0,
+            "max": 0.3930634558200836
+          },
+          "online_target_corr_shadow": {
+            "mean": 0.8124435748904943,
+            "min": 0.0,
+            "max": 0.9999975562095642
+          }
+        }
+      },
+      "high": {
+        "samples": 119,
+        "metrics": {
+          "has_offline_division_mask": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "has_offline_bbox": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "cloud_frac": {
+            "mean": 0.7406893818318343,
+            "min": 0.4056549072265625,
+            "max": 1.0
+          },
+          "shadow_frac": {
+            "mean": 0.046269040147797404,
+            "min": 0.0,
+            "max": 0.3526763916015625
+          },
+          "clear_frac": {
+            "mean": 0.2130415780203683,
+            "min": 0.0,
+            "max": 0.5772705078125
+          },
+          "division_min": {
+            "mean": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "division_max": {
+            "mean": 0.3718899358220461,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_mean": {
+            "mean": 0.022658806239831835,
+            "min": 0.0,
+            "max": 0.24461013078689575
+          },
+          "division_pos_frac": {
+            "mean": 0.07738526929326418,
+            "min": 0.0,
+            "max": 0.6170196533203125
+          },
+          "division_hard_frac": {
+            "mean": 0.009891926741399685,
+            "min": 0.0,
+            "max": 0.2736968994140625
+          },
+          "division_soft_frac": {
+            "mean": 0.07738001206341912,
+            "min": 0.0,
+            "max": 0.6170196533203125
+          },
+          "division_shadow_precision_dilated": {
+            "mean": 0.4217940529744273,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_recall": {
+            "mean": 0.5073993138094772,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "division_shadow_iou": {
+            "mean": 0.18596032912304875,
+            "min": 0.0,
+            "max": 0.7343516302722106
+          },
+          "division_cloud_leakage": {
+            "mean": 0.04563792183090858,
+            "min": 0.0,
+            "max": 0.49425321144066553
+          },
+          "division_clear_leakage": {
+            "mean": 0.10511771645386842,
+            "min": 0.0,
+            "max": 0.8783373063170441
+          },
+          "division_outside_bbox_frac": {
+            "mean": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "bbox_valid": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "bbox_x1": {
+            "mean": 20.18487394957983,
+            "min": 0.0,
+            "max": 222.0
+          },
+          "bbox_y1": {
+            "mean": 19.50420168067227,
+            "min": 0.0,
+            "max": 240.0
+          },
+          "bbox_x2": {
+            "mean": 240.1596638655462,
+            "min": 77.0,
+            "max": 255.0
+          },
+          "bbox_y2": {
+            "mean": 238.42857142857142,
+            "min": 56.0,
+            "max": 255.0
+          },
+          "bbox_area_frac": {
+            "mean": 0.7829659085313813,
+            "min": 0.0018463134765625,
+            "max": 1.0
+          },
+          "bbox_shadow_recall": {
+            "mean": 0.8992994608492333,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "bbox_division_recall": {
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "bbox_cloud_frac_inside": {
+            "mean": 0.7014296433069828,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "bbox_clear_frac_inside": {
+            "mean": 0.23461602581694935,
+            "min": 0.0,
+            "max": 1.0
+          },
+          "boundary_iou": {
+            "mean": 0.03215633807154241,
+            "min": 0.0,
+            "max": 0.2549019607843137
+          },
+          "reference_target_mae_full": {
+            "mean": 0.009307560237947418,
+            "min": 0.0,
+            "max": 0.14868588745594025
+          },
+          "reference_target_mae_shadow": {
+            "mean": 0.0684674537146664,
+            "min": 0.0,
+            "max": 0.3342955453055246
+          },
+          "reference_target_mae_bbox": {
+            "mean": 0.013139742814279657,
+            "min": 0.0,
+            "max": 0.19824784994125366
+          },
+          "reference_target_corr_shadow": {
+            "mean": 0.8180700522480588,
+            "min": 0.0,
+            "max": 0.9999898076057434
+          },
+          "online_target_mae_full": {
+            "mean": 0.009307560237947418,
+            "min": 0.0,
+            "max": 0.14868588745594025
+          },
+          "online_target_mae_shadow": {
+            "mean": 0.0684674537146664,
+            "min": 0.0,
+            "max": 0.3342955453055246
+          },
+          "online_target_mae_bbox": {
+            "mean": 0.013139742814279657,
+            "min": 0.0,
+            "max": 0.19824784994125366
+          },
+          "online_target_corr_shadow": {
+            "mean": 0.8180700522480588,
+            "min": 0.0,
+            "max": 0.9999898076057434
+          }
+        }
+      }
+    },
+    "config": "/home/students/sushaoqi/CR/main/configs/allclear_semantic_softshadow_dadigan_stage1.yaml",
+    "split": "test",
+    "bbox_space": "sam_input",
+    "sam_input_size": 1024,
+    "thresholds": {
+      "positive": 0.05,
+      "hard": 0.5
+    },
+    "reference_target": {
+      "mode": "paper_ratio",
+      "low_pass_kernel": 5,
+      "division_threshold": 0.05
+    },
+    "fallbacks": {
+      "online_mask": false,
+      "bbox_from_mask": false
+    },
+    "visualizations": {
+      "saved_by_cloud_bucket": {
+        "medium": 3,
+        "low": 3
+      },
+      "visual_samples_per_bucket": 3,
+      "visual_buckets": [
+        "low",
+        "medium"
+      ],
+      "min_visual_shadow_frac": 0.002,
+      "min_visual_division_pos_frac": 0.0
+    }
+  }
+}

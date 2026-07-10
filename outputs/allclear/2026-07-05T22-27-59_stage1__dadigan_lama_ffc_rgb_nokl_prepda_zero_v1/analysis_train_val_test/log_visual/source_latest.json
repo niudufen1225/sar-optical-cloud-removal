@@ -1,0 +1,36 @@
+{
+  "epoch": 160,
+  "best_metric": 3.3169241087003187,
+  "best_metric_name": "pixel_total",
+  "last_train": {
+    "disc_total": 1.2009287135681246,
+    "disc_real_loss": 0.4363463199284463,
+    "disc_fake_loss": 0.7550695713506926,
+    "disc_real_gp": 0.00951281407939139,
+    "disc_real_logit": 0.7032034298695555,
+    "disc_fake_logit": 0.6943628241162781,
+    "cloud_l1": 0.01730738761934483,
+    "cloud_kl": 0.0,
+    "cloud_adv": 0.48983635350104865,
+    "feature_matching": 0.08535866915541687,
+    "perceptual": 0.11474291652167609,
+    "pixel_total": 2.076886520108681,
+    "perceptual_total": 0.6884575004971355,
+    "recon_total": 2.7653440196944303,
+    "gan_total": 0.8053284423249213,
+    "total": 3.570672455183957
+  },
+  "loss_weights": {
+    "w_final_l1": 0.0,
+    "w_grad": 0.0,
+    "w_shadow_removal": 0.0,
+    "w_shadow_mask": 0.0,
+    "w_shadow_penumbra": 0.0,
+    "w_cloud_l1": 120.0,
+    "w_cloud_kl": 0.0,
+    "w_cloud_adv": 0.25,
+    "w_feature_matching": 8.0,
+    "w_perceptual": 6.0
+  },
+  "lr": 4e-05
+}

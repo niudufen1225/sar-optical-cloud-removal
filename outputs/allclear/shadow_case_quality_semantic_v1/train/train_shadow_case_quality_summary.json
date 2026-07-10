@@ -1,0 +1,67 @@
+{
+  "count": 1951,
+  "case_count": {
+    "ambiguous": 1057,
+    "no_shadow": 454,
+    "valid_shadow": 440
+  },
+  "case_ratio": {
+    "ambiguous": 0.5417734495130703,
+    "no_shadow": 0.2327011788826243,
+    "valid_shadow": 0.2255253716043055
+  },
+  "cloud_bucket_count": {
+    "high": 1045,
+    "medium": 534,
+    "low": 372
+  },
+  "cloud_bucket_ratio": {
+    "high": 0.5356227575602255,
+    "medium": 0.27370579190158895,
+    "low": 0.19067145053818554
+  },
+  "case_by_cloud_bucket": {
+    "ambiguous/high": 481,
+    "no_shadow/high": 376,
+    "ambiguous/medium": 339,
+    "valid_shadow/high": 188,
+    "valid_shadow/medium": 150,
+    "ambiguous/low": 237,
+    "valid_shadow/low": 102,
+    "no_shadow/low": 33,
+    "no_shadow/medium": 45
+  },
+  "means": {
+    "cloud_frac": 0.4740602423874676,
+    "shadow_frac": 0.06703437285078666,
+    "division_pos_frac": 0.1272278770552361,
+    "bbox_area_frac": 0.7965284745428026,
+    "division_clear_leakage": 0.11440892979788017,
+    "division_cloud_leakage": 0.06553422057928207
+  },
+  "config": "/home/students/sushaoqi/CR/main/configs/allclear_semantic_softshadow_dadigan_stage1.yaml",
+  "split": "train",
+  "thresholds": {
+    "softshadow_shadow_case_positive_threshold": 0.05,
+    "softshadow_absent_shadow_threshold": 0.002,
+    "softshadow_absent_division_threshold": 0.002,
+    "softshadow_valid_shadow_threshold": 0.002,
+    "softshadow_valid_division_threshold": 0.005,
+    "softshadow_max_bbox_area": 0.95,
+    "softshadow_max_clear_leakage": 0.3,
+    "softshadow_max_cloud_leakage": 0.3
+  },
+  "visualizations": {
+    "saved_by_case": {
+      "ambiguous": 6,
+      "no_shadow": 6,
+      "valid_shadow": 6
+    },
+    "visual_buckets": [
+      "low",
+      "medium",
+      "high"
+    ],
+    "visual_samples_per_case": 6
+  }
+}

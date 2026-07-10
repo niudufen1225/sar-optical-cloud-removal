@@ -1,0 +1,75 @@
+{
+  "count": 252,
+  "case_count": {
+    "ambiguous": 175,
+    "no_shadow": 53,
+    "valid_shadow": 24
+  },
+  "case_ratio": {
+    "ambiguous": 0.6944444444444444,
+    "no_shadow": 0.21031746031746032,
+    "valid_shadow": 0.09523809523809523
+  },
+  "cloud_bucket_count": {
+    "high": 125,
+    "medium": 77,
+    "low": 50
+  },
+  "cloud_bucket_ratio": {
+    "high": 0.49603174603174605,
+    "medium": 0.3055555555555556,
+    "low": 0.1984126984126984
+  },
+  "case_by_cloud_bucket": {
+    "ambiguous/high": 70,
+    "no_shadow/high": 43,
+    "valid_shadow/high": 12,
+    "ambiguous/medium": 63,
+    "valid_shadow/medium": 8,
+    "valid_shadow/low": 4,
+    "ambiguous/low": 42,
+    "no_shadow/low": 4,
+    "no_shadow/medium": 6
+  },
+  "means": {
+    "cloud_frac": 0.45106070382254465,
+    "shadow_frac": 0.0702032967219277,
+    "division_pos_frac": 0.12076138693188863,
+    "bbox_area_frac": 0.7929296342153398,
+    "division_shadow_precision_dilated": 0.3164581475494843,
+    "division_clear_leakage": 0.10832015977913605,
+    "division_cloud_leakage": 0.04976672072261285
+  },
+  "config": "/home/students/sushaoqi/CR/main/configs/allclear_semantic_softshadow_evit_sam_dadigan_stage1.yaml",
+  "split": "val",
+  "thresholds": {
+    "softshadow_shadow_case_positive_threshold": 0.05,
+    "softshadow_absent_shadow_threshold": 0.002,
+    "softshadow_absent_division_threshold": 0.002,
+    "softshadow_valid_shadow_threshold": 0.002,
+    "softshadow_valid_division_threshold": 0.005,
+    "softshadow_max_bbox_area": 0.8,
+    "softshadow_min_division_shadow_precision_dilated": 0.3,
+    "softshadow_max_clear_leakage": 0.3,
+    "softshadow_max_cloud_leakage": 0.3
+  },
+  "visualizations": {
+    "saved_by_case_bucket": {
+      "ambiguous/high": 3,
+      "no_shadow/high": 3,
+      "valid_shadow/high": 3,
+      "ambiguous/medium": 3,
+      "valid_shadow/medium": 3,
+      "valid_shadow/low": 3,
+      "ambiguous/low": 3,
+      "no_shadow/low": 3,
+      "no_shadow/medium": 3
+    },
+    "visual_buckets": [
+      "low",
+      "medium",
+      "high"
+    ],
+    "visual_samples_per_case": 3
+  }
+}

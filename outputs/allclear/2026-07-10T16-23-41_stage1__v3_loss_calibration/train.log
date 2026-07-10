@@ -1,0 +1,27 @@
+2026-07-10 16:23:41,660  INFO     ======================================================================
+2026-07-10 16:23:41,660  INFO     ALLClear Training - Stage1
+2026-07-10 16:23:41,660  INFO     Config: configs/allclear_dadigan_lama_ffc_stage1_rgb_lowres_glfcr_coupled_spatial_v3_loss_calibration.yaml
+2026-07-10 16:23:41,660  INFO     Run directory: outputs/allclear/2026-07-10T16-23-41_stage1__v3_loss_calibration
+2026-07-10 16:23:41,660  INFO     Device: cuda:0 (1 visible GPU(s), world_size=1, rank=0)
+2026-07-10 16:23:41,660  INFO     Model S2 band subset enabled: [3, 2, 1]
+2026-07-10 16:23:41,660  INFO     Model reflectance stretch enabled: [0.0000, 0.3500] -> [0, 1]
+2026-07-10 16:23:41,660  INFO     ======================================================================
+2026-07-10 16:23:41,683  INFO     Train batches: 654  |  Val batches: 58
+2026-07-10 16:23:44,996  INFO     Loss profile: dadigan_lama_ffc (cloud/degraded restoration terms only)
+2026-07-10 16:23:44,997  INFO     Training: epochs=40 (start=1)  batch_size_per_rank=4  grad_accum=2  effective_global_batch=8  lr=3.0e-05  val_every=1  keep_best=1
+2026-07-10 16:23:44,997  INFO     Best checkpoint metric: pixel_total
+2026-07-10 16:23:44,997  INFO     LR scheduler: cosine_warmup  warmup=5  min=2.0e-06  total=40
+2026-07-10 16:40:45,066  INFO     Epoch    1/40 | T total=4.5414  cloud.adv=0.0000  cloud.kl=0.0000  cloud.l1=0.0000  cloud.l1.known=0.0000  cloud.l1.missing=0.1514  feature.matching=0.0000  gan.total=0.0000  perceptual=0.0000  perceptual.total=0.0000  pixel.total=4.5414  recon.total=4.5414 |      | train_time=0:17:00  sec/batch=1.560  elapsed=0:17:00  eta=11:03:02
+2026-07-10 16:41:22,392  INFO     Epoch    1/40 | V total=3.7981  cloud.adv=0.0000  cloud.kl=0.0000  cloud.l1=0.0000  cloud.l1.known=0.0000  cloud.l1.missing=0.1266  feature.matching=0.0000  gan.total=0.0000  perceptual=0.0000  perceptual.total=0.0000  pixel.total=3.7981  recon.total=3.7981 | val_time=0:00:37
+2026-07-10 16:41:23,444  INFO     Epoch    1/40 | *** New best: pixel_total=3.798091 ***
+2026-07-10 16:51:55,374  INFO     Epoch    2/40 | T total=2.5822  cloud.adv=0.0000  cloud.kl=0.0000  cloud.l1=0.0000  cloud.l1.known=0.0000  cloud.l1.missing=0.0861  feature.matching=0.0000  gan.total=0.0000  perceptual=0.0000  perceptual.total=0.0000  pixel.total=2.5822  recon.total=2.5822 |      | train_time=0:10:31  sec/batch=0.966  elapsed=0:28:10  eta=8:55:17
+2026-07-10 16:52:28,706  INFO     Epoch    2/40 | V total=2.3817  cloud.adv=0.0000  cloud.kl=0.0000  cloud.l1=0.0000  cloud.l1.known=0.0000  cloud.l1.missing=0.0794  feature.matching=0.0000  gan.total=0.0000  perceptual=0.0000  perceptual.total=0.0000  pixel.total=2.3817  recon.total=2.3817 | val_time=0:00:33
+2026-07-10 16:52:30,648  INFO     Epoch    2/40 | *** New best: pixel_total=2.381683 ***
+2026-07-10 17:03:06,610  INFO     Epoch    3/40 | T total=2.3867  cloud.adv=0.0000  cloud.kl=0.0000  cloud.l1=0.0000  cloud.l1.known=0.0000  cloud.l1.missing=0.0796  feature.matching=0.0000  gan.total=0.0000  perceptual=0.0000  perceptual.total=0.0000  pixel.total=2.3867  recon.total=2.3867 |      | train_time=0:10:35  sec/batch=0.972  elapsed=0:39:21  eta=8:05:26
+2026-07-10 17:03:41,811  INFO     Epoch    3/40 | V total=2.1185  cloud.adv=0.0000  cloud.kl=0.0000  cloud.l1=0.0000  cloud.l1.known=0.0000  cloud.l1.missing=0.0706  feature.matching=0.0000  gan.total=0.0000  perceptual=0.0000  perceptual.total=0.0000  pixel.total=2.1185  recon.total=2.1185 | val_time=0:00:35
+2026-07-10 17:03:43,833  INFO     Epoch    3/40 | *** New best: pixel_total=2.118530 ***
+2026-07-10 17:14:33,226  INFO     Epoch    4/40 | T total=2.2841  cloud.adv=0.0000  cloud.kl=0.0000  cloud.l1=0.0000  cloud.l1.known=0.0000  cloud.l1.missing=0.0761  feature.matching=0.0000  gan.total=0.0000  perceptual=0.0000  perceptual.total=0.0000  pixel.total=2.2841  recon.total=2.2841 |      | train_time=0:10:49  sec/batch=0.993  elapsed=0:50:48  eta=7:37:14
+2026-07-10 17:15:05,464  INFO     Epoch    4/40 | V total=2.3598  cloud.adv=0.0000  cloud.kl=0.0000  cloud.l1=0.0000  cloud.l1.known=0.0000  cloud.l1.missing=0.0787  feature.matching=0.0000  gan.total=0.0000  perceptual=0.0000  perceptual.total=0.0000  pixel.total=2.3598  recon.total=2.3598 | val_time=0:00:32
+2026-07-10 17:26:14,479  INFO     Epoch    5/40 | T total=2.4711  cloud.adv=0.0000  cloud.kl=0.0000  cloud.l1=0.0000  cloud.l1.known=0.0000  cloud.l1.missing=0.0751  feature.matching=0.0000  gan.total=0.0000  perceptual=0.2713  perceptual.total=0.2171  pixel.total=2.2541  recon.total=2.4711 |      | train_time=0:11:07  sec/batch=1.021  elapsed=1:02:29  eta=7:17:26
+2026-07-10 17:26:50,519  INFO     Epoch    5/40 | V total=2.2189  cloud.adv=0.0000  cloud.kl=0.0000  cloud.l1=0.0000  cloud.l1.known=0.0000  cloud.l1.missing=0.0668  feature.matching=0.0000  gan.total=0.0000  perceptual=0.2668  perceptual.total=0.2135  pixel.total=2.0054  recon.total=2.2189 | val_time=0:00:36
+2026-07-10 17:26:52,563  INFO     Epoch    5/40 | *** New best: pixel_total=2.005396 ***

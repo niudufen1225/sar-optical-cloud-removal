@@ -1,0 +1,7 @@
+metric,target_weight,current_weight,start_epoch,ramp_epochs,active_epoch_count,status
+cloud_l1,0.0,0.0,1,0,0,disabled
+cloud_kl,0.0,0.0,1,0,0,disabled
+cloud_adv,10.0,10.0,1,0,169,active
+feature_matching,100.0,100.0,1,0,169,active
+perceptual,30.0,30.0,1,0,169,active
+disc_total,10.0,10.0,1,0,169,active

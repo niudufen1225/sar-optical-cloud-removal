@@ -1,0 +1,4 @@
+file,kind,epoch,metric,value,size_mb,mtime
+best_epoch_0068_recon_total_6.400761.pt,best,68,recon_total,6.400761,222.02322959899902,2026-07-06T21:54:58
+best_epoch_0149_recon_total_6.266220.pt,best,149,recon_total,6.26622,222.02322959899902,2026-07-07T08:17:52
+last.pt,last,169,last,,221.54996299743652,2026-07-07T10:58:00

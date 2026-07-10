@@ -167,3 +167,28 @@ weights/
 /external/SoftShadow/
 /external/TG-ECNet/
 /external/efficientvit/
+
+# ============================================================
+# 保留 allclear 实验中的轻量日志、配置和评估指标
+# ============================================================
+!outputs/
+outputs/*
+
+!outputs/allclear/
+outputs/allclear/**
+
+# 允许 Git 继续遍历各级实验目录
+!outputs/allclear/**/
+
+# 只上传轻量文本日志和配置
+!outputs/allclear/**/*.log
+!outputs/allclear/**/*.txt
+!outputs/allclear/**/*.json
+!outputs/allclear/**/*.jsonl
+!outputs/allclear/**/*.yaml
+!outputs/allclear/**/*.yml
+!outputs/allclear/**/*.csv
+!outputs/allclear/**/*.md
+
+# TensorBoard 日志；不需要时删除下一行
+!outputs/allclear/**/events.out.tfevents.*

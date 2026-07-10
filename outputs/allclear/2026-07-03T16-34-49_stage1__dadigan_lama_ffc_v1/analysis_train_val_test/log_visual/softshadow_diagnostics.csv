@@ -1,0 +1,7 @@
+split,term,epoch_count,weight_positive_epoch_count,nonzero_epoch_count,zero_while_weight_positive_epoch_count,first_nonzero_epoch,latest_epoch,latest_value,latest_weight,mean,std,tail10_std
+train,shadow_removal,200,0,0,0,,200,0.0,0.0,0.0,0.0,0.0
+train,shadow_mask,200,0,0,0,,200,0.0,0.0,0.0,0.0,0.0
+train,shadow_penumbra,200,0,0,0,,200,0.0,0.0,0.0,0.0,0.0
+val,shadow_removal,200,0,0,0,,200,0.0,0.0,0.0,0.0,0.0
+val,shadow_mask,200,0,0,0,,200,0.0,0.0,0.0,0.0,0.0
+val,shadow_penumbra,200,0,0,0,,200,0.0,0.0,0.0,0.0,0.0

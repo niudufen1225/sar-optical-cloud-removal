@@ -1,0 +1,3 @@
+severity,topic,message
+info,discriminator,最近若干 epoch 的 real/fake logit 非常接近；判别器区分度弱或处于均衡状态，需要结合视觉和 loss 振荡判断。
+info,softshadow,最近 10 个 epoch 的主要 SoftShadow loss 几乎无波动；可能已经平台期，也可能验证/样本构成固定导致。

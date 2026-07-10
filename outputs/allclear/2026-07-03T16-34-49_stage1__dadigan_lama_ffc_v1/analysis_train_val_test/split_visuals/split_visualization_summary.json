@@ -1,0 +1,55 @@
+{
+  "run_dir": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-03T16-34-49_stage1__dadigan_lama_ffc_v1",
+  "checkpoint": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-03T16-34-49_stage1__dadigan_lama_ffc_v1/checkpoints/best_epoch_0109_recon_total_14.505072.pt",
+  "output_dir": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-03T16-34-49_stage1__dadigan_lama_ffc_v1/analysis_train_val_test/split_visuals",
+  "splits": [
+    {
+      "split": "train",
+      "seen": {
+        "low": 16,
+        "medium": 19,
+        "high": 37
+      },
+      "saved": {
+        "low": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-03T16-34-49_stage1__dadigan_lama_ffc_v1/analysis_train_val_test/split_visuals/train/best_epoch_0109_recon_total_14.505072_train_low.png",
+        "medium": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-03T16-34-49_stage1__dadigan_lama_ffc_v1/analysis_train_val_test/split_visuals/train/best_epoch_0109_recon_total_14.505072_train_medium.png",
+        "high": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-03T16-34-49_stage1__dadigan_lama_ffc_v1/analysis_train_val_test/split_visuals/train/best_epoch_0109_recon_total_14.505072_train_high.png"
+      },
+      "requested_per_bucket": 3,
+      "candidate_pool_per_bucket": 15,
+      "selection": "top_target_rgb_gradient_contrast"
+    },
+    {
+      "split": "val",
+      "seen": {
+        "low": 39,
+        "medium": 15,
+        "high": 106
+      },
+      "saved": {
+        "low": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-03T16-34-49_stage1__dadigan_lama_ffc_v1/analysis_train_val_test/split_visuals/val/best_epoch_0109_recon_total_14.505072_val_low.png",
+        "medium": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-03T16-34-49_stage1__dadigan_lama_ffc_v1/analysis_train_val_test/split_visuals/val/best_epoch_0109_recon_total_14.505072_val_medium.png",
+        "high": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-03T16-34-49_stage1__dadigan_lama_ffc_v1/analysis_train_val_test/split_visuals/val/best_epoch_0109_recon_total_14.505072_val_high.png"
+      },
+      "requested_per_bucket": 3,
+      "candidate_pool_per_bucket": 15,
+      "selection": "top_target_rgb_gradient_contrast"
+    },
+    {
+      "split": "test",
+      "seen": {
+        "low": 28,
+        "medium": 19,
+        "high": 97
+      },
+      "saved": {
+        "low": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-03T16-34-49_stage1__dadigan_lama_ffc_v1/analysis_train_val_test/split_visuals/test/best_epoch_0109_recon_total_14.505072_test_low.png",
+        "medium": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-03T16-34-49_stage1__dadigan_lama_ffc_v1/analysis_train_val_test/split_visuals/test/best_epoch_0109_recon_total_14.505072_test_medium.png",
+        "high": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-03T16-34-49_stage1__dadigan_lama_ffc_v1/analysis_train_val_test/split_visuals/test/best_epoch_0109_recon_total_14.505072_test_high.png"
+      },
+      "requested_per_bucket": 3,
+      "candidate_pool_per_bucket": 15,
+      "selection": "top_target_rgb_gradient_contrast"
+    }
+  ]
+}

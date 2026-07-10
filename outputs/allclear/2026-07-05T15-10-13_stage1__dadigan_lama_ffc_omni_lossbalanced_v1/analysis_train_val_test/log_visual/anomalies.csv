@@ -1,0 +1,6 @@
+severity,topic,message
+info,progress,当前日志到 epoch 50/200，结论只覆盖未完成训练。
+warn,loss_semantics,`gan_total` 在 adversarial/FM 权重为 0 时仍非零；这通常表示 perceptual/HRF 等项被归入 gan_total 命名桶，报告时不要把它解释成纯 GAN 损失。
+info,softshadow,最近 10 个 epoch 的主要 SoftShadow loss 几乎无波动；可能已经平台期，也可能验证/样本构成固定导致。
+warn,visualization,50 个 epoch 缺少 low/medium/high/heavy 中至少一个可视化 bucket。
+info,visual_proxy,最新可视化中这些 bucket 的 Stage1 RGB proxy MAE 未优于 cloudy 输入：high
