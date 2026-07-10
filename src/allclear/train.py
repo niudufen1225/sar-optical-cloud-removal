@@ -314,6 +314,16 @@ def optional_float_tuple(value: Any) -> tuple[float, ...] | None:
     return (float(value),)
 
 
+def optional_bool(value: Any) -> bool | None:
+    """Parse a nullable compatibility switch without turning null into false."""
+
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    raise ValueError("nullable boolean config values must be true, false, or null")
+
+
 def build_model(cfg: dict[str, Any]) -> torch.nn.Module:
     model_cfg = cfg.get("model", {})
     framework = str(model_cfg.get("framework", "stage1")).lower()
@@ -370,6 +380,8 @@ def build_model(cfg: dict[str, Any]) -> torch.nn.Module:
             cloud_prefusion_kernel_size=int(model_cfg.get("cloud_prefusion_kernel_size", 5)),
             cloud_prefusion_reduction=int(model_cfg.get("cloud_prefusion_reduction", 16)),
             cloud_lowres_glfcr_coupled=bool(model_cfg.get("cloud_lowres_glfcr_coupled", False)),
+            cloud_lowres_enabled=optional_bool(model_cfg.get("cloud_lowres_enabled")),
+            cloud_ddin_glfcr_coupled=optional_bool(model_cfg.get("cloud_ddin_glfcr_coupled")),
             cloud_lowres_factor=int(model_cfg.get("cloud_lowres_factor", 2)),
             cloud_lowres_opt_ffc_blocks=int(model_cfg.get("cloud_lowres_opt_ffc_blocks", 0)),
             cloud_lowres_opt_ffc_ratio=float(model_cfg.get("cloud_lowres_opt_ffc_ratio", model_cfg.get("cloud_ffc_ratio", 0.75))),
@@ -382,6 +394,14 @@ def build_model(cfg: dict[str, Any]) -> torch.nn.Module:
             cloud_cab_sr_ratio=int(model_cfg.get("cloud_cab_sr_ratio", 8)),
             cloud_cab_attention_mode=str(model_cfg.get("cloud_cab_attention_mode", "standard")),
             cloud_msab_mode=str(model_cfg.get("cloud_msab_mode", "efficient")),
+            cloud_cab2_residual_source=str(model_cfg.get("cloud_cab2_residual_source", "query")),
+            cloud_cab2_update_scale=float(model_cfg.get("cloud_cab2_update_scale", 1.0)),
+            cloud_post_ddin_sar_filter=str(model_cfg.get("cloud_post_ddin_sar_filter", "none")),
+            cloud_post_ddin_sar_filter_kernel_size=(
+                int(model_cfg["cloud_post_ddin_sar_filter_kernel_size"])
+                if model_cfg.get("cloud_post_ddin_sar_filter_kernel_size") is not None
+                else None
+            ),
             cloud_ffc_blocks=int(model_cfg.get("cloud_ffc_blocks", 0)),
             cloud_ffc_blocks_per_scale=optional_int_tuple(model_cfg.get("cloud_ffc_blocks_per_scale")),
             cloud_ffc_ratio=float(model_cfg.get("cloud_ffc_ratio", 0.75)),
@@ -446,6 +466,8 @@ def build_model(cfg: dict[str, Any]) -> torch.nn.Module:
         cloud_prefusion_kernel_size=int(model_cfg.get("cloud_prefusion_kernel_size", 5)),
         cloud_prefusion_reduction=int(model_cfg.get("cloud_prefusion_reduction", 16)),
         cloud_lowres_glfcr_coupled=bool(model_cfg.get("cloud_lowres_glfcr_coupled", False)),
+        cloud_lowres_enabled=optional_bool(model_cfg.get("cloud_lowres_enabled")),
+        cloud_ddin_glfcr_coupled=optional_bool(model_cfg.get("cloud_ddin_glfcr_coupled")),
         cloud_lowres_factor=int(model_cfg.get("cloud_lowres_factor", 2)),
         cloud_lowres_opt_ffc_blocks=int(model_cfg.get("cloud_lowres_opt_ffc_blocks", 0)),
         cloud_lowres_opt_ffc_ratio=float(model_cfg.get("cloud_lowres_opt_ffc_ratio", model_cfg.get("cloud_ffc_ratio", 0.75))),
@@ -462,6 +484,14 @@ def build_model(cfg: dict[str, Any]) -> torch.nn.Module:
         cloud_cab_sr_ratio=int(model_cfg.get("cloud_cab_sr_ratio", 8)),
         cloud_cab_attention_mode=str(model_cfg.get("cloud_cab_attention_mode", "standard")),
         cloud_msab_mode=str(model_cfg.get("cloud_msab_mode", "efficient")),
+        cloud_cab2_residual_source=str(model_cfg.get("cloud_cab2_residual_source", "query")),
+        cloud_cab2_update_scale=float(model_cfg.get("cloud_cab2_update_scale", 1.0)),
+        cloud_post_ddin_sar_filter=str(model_cfg.get("cloud_post_ddin_sar_filter", "none")),
+        cloud_post_ddin_sar_filter_kernel_size=(
+            int(model_cfg["cloud_post_ddin_sar_filter_kernel_size"])
+            if model_cfg.get("cloud_post_ddin_sar_filter_kernel_size") is not None
+            else None
+        ),
         cloud_ffc_blocks=int(model_cfg.get("cloud_ffc_blocks", 0)),
         cloud_mask_input_mode=str(model_cfg.get("cloud_mask_input_mode", "raw")),
         cloud_append_mask=bool(model_cfg.get("cloud_append_mask", False)),

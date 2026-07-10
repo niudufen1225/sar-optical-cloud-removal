@@ -244,8 +244,16 @@ class PDAFMScale(nn.Module):
         cab_sr_ratio: int = 8,
         cab_attention_mode: str = "standard",
         msab_mode: str = "efficient",
+        cab2_residual_source: str = "query",
+        cab2_update_scale: float = 1.0,
     ) -> None:
         super().__init__()
+        self.cab2_residual_source = str(cab2_residual_source).lower()
+        if self.cab2_residual_source not in {"query", "reference", "fm"}:
+            raise ValueError("cab2_residual_source must be one of: query, reference, fm")
+        self.cab2_update_scale = float(cab2_update_scale)
+        if not torch.isfinite(torch.tensor(self.cab2_update_scale)) or self.cab2_update_scale < 0.0:
+            raise ValueError("cab2_update_scale must be a finite non-negative scalar")
         self.cab_ps = SRACAB(
             channels,
             heads=heads,
@@ -264,7 +272,13 @@ class PDAFMScale(nn.Module):
         # Eq.(21-23): CAB(P, S) — opt_private→Q, shared→K,V
         fm = self.cab_ps(opt_private, shared)
         # Eq.(24-26): CAB(V, FM) — sar_private→Q, fm→K,V
-        fm = self.cab_fv(sar_private, fm)
+        cab2_residual = fm if self.cab2_residual_source in {"reference", "fm"} else None
+        fm = self.cab_fv(
+            sar_private,
+            fm,
+            residual_base=cab2_residual,
+            update_scale=self.cab2_update_scale,
+        )
         # MSAB on fused features
         return self.msab(fm)
 
@@ -382,6 +396,27 @@ def _glfcr_kernel2d_conv(feat_in: Tensor, kernel: Tensor, kernel_size: int) -> T
     kernel = kernel.permute(0, 1, 2, 3, 5, 4).reshape(n, h, w, channels, -1)
     out = torch.sum(feat * kernel, dim=-1)
     return out.permute(0, 3, 1, 2).contiguous()
+
+
+class GLFCRPostDDINSARFilter(nn.Module):
+    """One-shot GLF-CR dynamic filtering of the final SAR-private feature.
+
+    This deliberately reuses only the public GLF-CR DFG and KernelConv2D
+    computation.  It does not perform either of GLF-CR's bidirectional gated
+    updates, so the optical-private feature remains unchanged and SAR is not
+    written back into the DDIN state.
+    """
+
+    def __init__(self, channels: int, kernel_size: int = 5) -> None:
+        super().__init__()
+        self.kernel_size = int(kernel_size)
+        if self.kernel_size % 2 != 1:
+            raise ValueError("post-DDIN dynamic kernel size must be odd")
+        self.dynamic_filter = GLFCRDynamicFilterGenerator(channels, kernel_size=self.kernel_size)
+
+    def forward(self, opt_private: Tensor, sar_private: Tensor) -> Tensor:
+        kernel = self.dynamic_filter(opt_private, sar_private)
+        return _glfcr_kernel2d_conv(sar_private, kernel, self.kernel_size)
 
 
 class GLFCRFusionStep(nn.Module):
@@ -671,6 +706,8 @@ class DADIGANCloudBranch(nn.Module):
         prefusion_kernel_size: int = 5,
         prefusion_reduction: int = 16,
         lowres_glfcr_coupled: bool = False,
+        lowres_enabled: bool | None = None,
+        ddin_glfcr_coupled: bool | None = None,
         lowres_factor: int = 2,
         lowres_opt_ffc_blocks: int = 0,
         lowres_opt_ffc_ratio: float = 0.75,
@@ -683,6 +720,10 @@ class DADIGANCloudBranch(nn.Module):
         cab_sr_ratio: int = 8,
         cab_attention_mode: str = "standard",
         msab_mode: str = "efficient",
+        cab2_residual_source: str = "query",
+        cab2_update_scale: float = 1.0,
+        post_ddin_sar_filter: str = "none",
+        post_ddin_sar_filter_kernel_size: int | None = None,
         ffc_blocks: int = 0,
         ffc_blocks_per_scale: tuple[int, ...] | None = None,
         ffc_ratio: float = 0.75,
@@ -712,11 +753,19 @@ class DADIGANCloudBranch(nn.Module):
             raise ValueError("mask_input_mode must be one of: raw, zero, lama_zero, constant, learned")
         if self.output_activation not in {"none", "identity", "sigmoid", "clamp"}:
             raise ValueError("output_activation must be one of: none, identity, sigmoid, clamp")
-        self.lowres_glfcr_coupled = bool(lowres_glfcr_coupled)
+        legacy_lowres_glfcr_coupled = bool(lowres_glfcr_coupled)
+        self.lowres_enabled = (
+            legacy_lowres_glfcr_coupled if lowres_enabled is None else bool(lowres_enabled)
+        )
+        self.ddin_glfcr_coupled = (
+            legacy_lowres_glfcr_coupled if ddin_glfcr_coupled is None else bool(ddin_glfcr_coupled)
+        )
+        # Preserve the legacy attribute as an effective combined-state view.
+        self.lowres_glfcr_coupled = self.lowres_enabled and self.ddin_glfcr_coupled
         self.lowres_factor = max(1, int(lowres_factor))
-        if self.lowres_glfcr_coupled and self.lowres_factor < 2:
-            raise ValueError("lowres_glfcr_coupled requires lowres_factor >= 2")
-        self.pixel_unshuffle: nn.Module = nn.PixelUnshuffle(self.lowres_factor) if self.lowres_glfcr_coupled else nn.Identity()
+        if self.lowres_enabled and self.lowres_factor < 2:
+            raise ValueError("lowres_enabled requires lowres_factor >= 2")
+        self.pixel_unshuffle: nn.Module = nn.PixelUnshuffle(self.lowres_factor) if self.lowres_enabled else nn.Identity()
         if self.mask_input_mode == "learned":
             self.mask_token = nn.Parameter(torch.full((1, self.s2_channels, 1, 1), float(mask_fill_value)))
         else:
@@ -726,8 +775,8 @@ class DADIGANCloudBranch(nn.Module):
                 persistent=False,
             )
         optical_in_channels = self.s2_channels + (1 if self.append_cloud_mask else 0)
-        optical_stem_in_channels = optical_in_channels * (self.lowres_factor ** 2 if self.lowres_glfcr_coupled else 1)
-        sar_stem_in_channels = sar_channels * (self.lowres_factor ** 2 if self.lowres_glfcr_coupled else 1)
+        optical_stem_in_channels = optical_in_channels * (self.lowres_factor ** 2 if self.lowres_enabled else 1)
+        sar_stem_in_channels = sar_channels * (self.lowres_factor ** 2 if self.lowres_enabled else 1)
         self.optical_stem = nn.Sequential(
             nn.Conv2d(optical_stem_in_channels, channels, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
@@ -738,7 +787,7 @@ class DADIGANCloudBranch(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(channels, channels, kernel_size=3, padding=1),
         )
-        if self.lowres_glfcr_coupled:
+        if self.lowres_enabled:
             self.lowres_opt_context: nn.Module = (
                 LaMaFFCFeatureContext(
                     channels,
@@ -755,6 +804,10 @@ class DADIGANCloudBranch(nn.Module):
                 if int(lowres_opt_ffc_blocks) > 0
                 else nn.Identity()
             )
+        else:
+            self.lowres_opt_context = nn.Identity()
+
+        if self.ddin_glfcr_coupled:
             self.ddin = GLFCRCoupledDDIN(
                 channels,
                 steps=ddin_steps,
@@ -762,8 +815,22 @@ class DADIGANCloudBranch(nn.Module):
                 kernel_size=max(1, int(lowres_glfcr_kernel_size)),
             )
         else:
-            self.lowres_opt_context = nn.Identity()
             self.ddin = DDIN(channels, steps=ddin_steps, prox_blocks=prox_blocks)
+        post_ddin_sar_filter = str(post_ddin_sar_filter).lower()
+        if post_ddin_sar_filter not in {"none", "glfcr_dynamic"}:
+            raise ValueError("post_ddin_sar_filter must be one of: none, glfcr_dynamic")
+        self.post_ddin_sar_filter_mode = post_ddin_sar_filter
+        self.post_ddin_sar_filter: nn.Module | None
+        if post_ddin_sar_filter == "glfcr_dynamic":
+            kernel_size = (
+                int(lowres_glfcr_kernel_size)
+                if post_ddin_sar_filter_kernel_size is None
+                else int(post_ddin_sar_filter_kernel_size)
+            )
+            self.post_ddin_sar_filter = GLFCRPostDDINSARFilter(channels, kernel_size=kernel_size)
+        else:
+            # Keep the disabled mode free of an extra module/state-dict branch.
+            self.post_ddin_sar_filter = None
         self.pre_pda_context = DDINOutputContext(
             channels,
             context=pre_pda_context,
@@ -789,6 +856,8 @@ class DADIGANCloudBranch(nn.Module):
             cab_sr_ratio=cab_sr_ratio,
             cab_attention_mode=cab_attention_mode,
             msab_mode=msab_mode,
+            cab2_residual_source=cab2_residual_source,
+            cab2_update_scale=cab2_update_scale,
         )
         if bottleneck_context == "none":
             self.bottleneck_context: nn.Module = nn.Identity()
@@ -855,7 +924,7 @@ class DADIGANCloudBranch(nn.Module):
                 "bottleneck_context must be one of: 'none', 'msab', 'restormer_mdta', "
                 "'restormer_block', 'lama_ffc', 'lama_ffc_feature', 'lama_ffc_multiscale', or 'identity'"
             )
-        if self.lowres_glfcr_coupled:
+        if self.lowres_enabled:
             self.reconstruct = nn.Sequential(
                 *[DADIGANResidualBlock(channels) for _ in range(max(1, int(reconstruct_blocks)))],
                 nn.Conv2d(channels, channels * self.lowres_factor * self.lowres_factor, kernel_size=3, padding=1),
@@ -895,7 +964,7 @@ class DADIGANCloudBranch(nn.Module):
         m1 = cloud_mask.float().clamp(0, 1)
         optical_input = self._optical_condition(s2, m1)
         sar_input = sar.float()
-        if self.lowres_glfcr_coupled:
+        if self.lowres_enabled:
             optical_input = self.pixel_unshuffle(optical_input)
             sar_input = self.pixel_unshuffle(sar_input)
         opt_feat = self.optical_stem(optical_input)
@@ -903,6 +972,9 @@ class DADIGANCloudBranch(nn.Module):
         sar_feat = self.sar_stem(sar_input)
         d = self.ddin(opt_feat, sar_feat)
         d = self.pre_pda_context(d)
+        if self.post_ddin_sar_filter is not None:
+            d = dict(d)
+            d["sar_private"] = self.post_ddin_sar_filter(d["opt_private"], d["sar_private"])
         opt_private, sar_private, prefusion_aux = self.prefusion_context(d["opt_private"], d["sar_private"])
         d = dict(d)
         d["opt_private"] = opt_private

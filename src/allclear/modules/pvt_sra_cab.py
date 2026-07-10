@@ -16,6 +16,8 @@ DADIGAN's discrepancy-aware ``1 - Attention`` CAB.
 
 from __future__ import annotations
 
+import math
+
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
@@ -184,7 +186,14 @@ class SRACAB(nn.Module):
         mlp_hidden_dim = int(self.channels * mlp_ratio)
         self.mlp = PVTMLP(in_features=self.channels, hidden_features=mlp_hidden_dim, drop=drop)
 
-    def forward(self, private_query: Tensor, reference_feat: Tensor) -> Tensor:
+    def forward(
+        self,
+        private_query: Tensor,
+        reference_feat: Tensor,
+        *,
+        residual_base: Tensor | None = None,
+        update_scale: float = 1.0,
+    ) -> Tensor:
         b, c, h, w = private_query.shape
         if c != self.channels:
             raise ValueError(f"expected {self.channels} channels, got {c}")
@@ -193,11 +202,20 @@ class SRACAB(nn.Module):
                 "SRACAB expects query/reference with identical shape, got "
                 f"{tuple(private_query.shape)} and {tuple(reference_feat.shape)}"
             )
+        if residual_base is not None and residual_base.shape != private_query.shape:
+            raise ValueError(
+                "SRACAB residual_base must have the same shape as private_query, got "
+                f"{tuple(residual_base.shape)} and {tuple(private_query.shape)}"
+            )
+        update_scale = float(update_scale)
+        if not math.isfinite(update_scale) or update_scale < 0.0:
+            raise ValueError("SRACAB update_scale must be a finite non-negative scalar")
         query_tokens = _to_tokens(private_query)
         reference_tokens = _to_tokens(reference_feat)
         query_norm = _to_nchw(self.norm_query(query_tokens), h, w)
         reference_norm = _to_nchw(self.norm_reference(reference_tokens), h, w)
 
-        x = query_tokens + self.attn(query_norm, reference_norm)
+        residual_tokens = query_tokens if residual_base is None else _to_tokens(residual_base)
+        x = residual_tokens + update_scale * self.attn(query_norm, reference_norm)
         x = x + self.mlp(self.norm2(x))
         return _to_nchw(x, h, w)
