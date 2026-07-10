@@ -1,0 +1,159 @@
+# Ablation: control quick config without LaMa FFC contexts.
+#
+# 用途：判断 FFC 全局上下文是否真正改善 GT optical 结构，还是放大低频/SAR-like 纹理。
+run_name: allclear_dadigan_lama_ffc_rgb_lowres_glfcr_spatial_gtstrong_quick_ablate_no_ffc
+output_root: outputs/allclear
+seed: 2026
+
+data:
+  root: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed
+  prefer_original_cld_shdw: false
+  cache_dir: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/cache/omnicloudmask_v4_low300_mh1000_image256_sar
+  train_manifest: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/omnicloudmask_v4_low300_mh1000/manifests/pairs_train.csv
+  val_manifest: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/omnicloudmask_v4_low300_mh1000/manifests/pairs_val.csv
+  test_manifest: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/omnicloudmask_v4_low300_mh1000/manifests/pairs_test.csv
+  optical_scale: 10000.0
+  load_sar: true
+  image_size: 256
+  model_band_indices: [3, 2, 1]
+  rgb_indices: [0, 1, 2]
+  model_reflectance_min: 0.0
+  model_reflectance_max: 0.35
+  shadow_index: 3
+  cloud_index: 1
+
+model:
+  framework: dadigan_baseline
+  s2_channels: 3
+  sar_channels: 2
+  dim: 96
+
+  baseline_mask_mode: degraded
+  baseline_output_mode: composite
+
+  cloud_mask_input_mode: lama_zero
+  cloud_append_mask: true
+  cloud_mask_fill_value: 0.0
+  cloud_output_activation: sigmoid
+
+  cloud_lowres_glfcr_coupled: true
+  cloud_lowres_factor: 2
+  cloud_lowres_glfcr_kernel_size: 5
+  cloud_lowres_opt_ffc_blocks: 0
+  cloud_lowres_opt_ffc_ratio: 0.75
+  cloud_lowres_opt_ffc_enable_lfu: false
+  cloud_lowres_opt_ffc_spatial_transform_layers: []
+  cloud_lowres_opt_ffc_spatial_transform_pad_coef: 0.5
+  cloud_lowres_opt_ffc_spatial_transform_angle_init_range: 80
+  cloud_lowres_opt_ffc_spatial_transform_train_angle: false
+
+  cloud_ddin_steps: 4
+  cloud_prox_blocks: 8
+  cloud_reconstruct_blocks: 3
+  cloud_cab_sr_ratio: 8
+  cloud_cab_attention_mode: complement
+  cloud_msab_mode: restormer_mdta
+
+  cloud_pre_pda_context: none
+  cloud_prefusion_context: none
+
+  cloud_bottleneck_context: none
+  cloud_ffc_blocks: 0
+  cloud_ffc_ratio: 0.75
+  cloud_ffc_enable_lfu: false
+  cloud_ffc_downsample: 1
+  cloud_ffc_spatial_transform_layers: []
+  cloud_ffc_spatial_transform_pad_coef: 0.5
+  cloud_ffc_spatial_transform_angle_init_range: 80
+  cloud_ffc_spatial_transform_train_angle: false
+
+  discriminator: pix2pixhd_nlayer
+  cloud_discriminator_base_channels: 64
+  cloud_discriminator_layers: 4
+  cloud_discriminator_condition_mask: false
+
+loss:
+  profile: dadigan_lama_ffc
+
+  # 主监督：paired clear 在云/阴影退化区内提供直接颜色和结构锚点。
+  cloud_l1: 0.0
+  cloud_l1_region: cloud
+  cloud_l1_reduction: image_mean
+  cloud_l1_missing: 60.0
+  cloud_l1_known: 2.0
+
+  # RGB 版本先不启用 KL，避免把 3 通道当作多光谱概率分布造成额外干扰。
+  cloud_kl: 0.0
+  cloud_kl_mode: softplus_sum
+  cloud_kl_reduction: mask_mean
+
+  # GAN/feature matching 是辅助真实感项，不再从 epoch 1 起压过 paired L1。
+  cloud_adv: 0.75
+  adversarial_loss: r1
+  r1_gp_coef: 0.001
+  mask_as_fake_target: true
+  allow_scale_mask: true
+  mask_scale_mode: nearest
+  cloud_gan_image: composite
+
+  feature_matching: 8.0
+  feature_matching_loss_type: l1
+  perceptual: 8.0
+  perceptual_type: hrf_resnet
+  perceptual_weights_path: /home/students/sushaoqi/CR/main/pretrained/lama/ade20k/ade20k-resnet50dilated-ppm_deepsup/encoder_epoch_20.pth
+  perceptual_input: cloud_context
+
+loss_schedule:
+  cloud_l1: {start_epoch: 1, ramp_epochs: 0}
+  cloud_l1_missing: {start_epoch: 1, ramp_epochs: 0}
+  cloud_l1_known: {start_epoch: 1, ramp_epochs: 0}
+  cloud_kl: {start_epoch: 1, ramp_epochs: 0}
+  perceptual: {start_epoch: 5, ramp_epochs: 8}
+  feature_matching: {start_epoch: 12, ramp_epochs: 10}
+  cloud_adv: {start_epoch: 12, ramp_epochs: 10}
+
+train:
+  epochs: 30
+  batch_size: 2
+  grad_accum_steps: 4
+  val_batch_size: 6
+  num_workers: 8
+  pin_memory: true
+  persistent_workers: true
+  prefetch_factor: 2
+  optimizer: adam
+  lr: 4.0e-5
+  disc_lr: 1.0e-4
+  weight_decay: 0.0
+  distributed: ddp
+  dist_backend: nccl
+  ddp_find_unused_parameters: false
+  optimizer_fused: false
+  optimizer_foreach: false
+  allow_tf32: true
+  matmul_precision: high
+  cudnn_benchmark: true
+  torch_compile: false
+  amp: true
+  amp_dtype: bf16
+  grad_clip_norm: 1.0
+  lr_scheduler: none
+  val_every: 1
+  best_metric: pixel_total
+  keep_best: 1
+
+eval:
+  batch_size: 6
+  num_workers: 8
+  pin_memory: true
+  persistent_workers: true
+  prefetch_factor: 2
+  visualize_splits: [val, test]
+  visualization_checkpoint: best
+  visual_buckets: [medium, high, heavy]
+  visual_profile: dadigan_lama_ffc
+  visual_samples_per_bucket: 5
+  visual_candidate_pool_per_bucket: 50
+  visual_rgb_stretch: panel
+  visual_rgb_gamma: 0.72
+  visual_rgb_gain: 1.08

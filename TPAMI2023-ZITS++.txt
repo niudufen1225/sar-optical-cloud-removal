@@ -1,0 +1,3558 @@
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+1
+
+ZITS++: Image Inpainting by Improving the
+Incremental Transformer on Structural Priors
+
+arXiv:2210.05950v3 [cs.CV] 24 May 2023
+
+Chenjie Cao⋆ , Qiaole Dong⋆ , Yanwei Fu†
+Abstract—Image inpainting involves filling missing areas of a corrupted image. Despite impressive results have been achieved
+recently, restoring images with both vivid textures and reasonable structures remains a significant challenge. Previous methods have
+primarily addressed regular textures while disregarding holistic structures due to the limited receptive fields of Convolutional Neural
+Networks (CNNs). To this end, we study learning a Zero-initialized residual addition based Incremental Transformer on Structural priors
+(ZITS++), an improved model upon our conference work, ZITS [1]. Specifically, given one corrupt image, we present the Transformer
+Structure Restorer (TSR) module to restore holistic structural priors at low image resolution, which are further upsampled by Simple
+Structure Upsampler (SSU) module to higher image resolution. To recover image texture details, we use the Fourier CNN Texture
+Restoration (FTR) module, which is strengthened by Fourier and large-kernel attention convolutions. Furthermore, to enhance the
+FTR, the upsampled structural priors from TSR are further processed by Structure Feature Encoder (SFE) and optimized with the
+Zero-initialized Residual Addition (ZeroRA) incrementally. Besides, a new masking positional encoding is proposed to encode the large
+irregular masks. Compared with ZITS, ZITS++ improves the FTR’s stability and inpainting ability with several techniques. More
+importantly, we comprehensively explore the effects of various image priors for inpainting and investigate how to utilize them to address
+high-resolution image inpainting with extensive experiments. This investigation is orthogonal to most inpainting approaches and can
+thus significantly benefit the community. Codes, dataset, and models will be released in https://github.com/ewrfcas/ZITS-PlusPlus.
+Index Terms—Image inpainting, Large-kernel attention convolution, Learning-based edges, Positional encoding.
+
+✦
+
+1
+
+I NTRODUCTION
+
+Image inpainting is a long-standing challenge that aims
+at filling missing areas in pictures with plausible pixels.
+It has various real-world applications, including object removal [8], photo restoration, and image editing [9]. To
+achieve realistic outcomes, the inpainted images should
+maintain both semantically coherent textures in the lowlevel color space and visually reasonable structures for highlevel human perception.
+Many classical image inpainting algorithms [10], [11],
+[12], [13], [14] heuristically search similar patches for the
+reconstruction of missing image regions. Benefiting from
+the excellent capacities of CNNs [15] and Generative Adversarial Networks (GANs) [16], existing deep learning
+methods [6], [7], [17], [18], [19], [20] could address the image
+inpainting tasks in some common cases. Particularly, to
+achieve high-fidelity reconstructions with realistic textures,
+deep learning models should have large receptive fields
+and preserve holistic structures [1]. However, preserving
+both good textures and holistic structures of the corrupted
+image remains intractable for these methods, despite some
+pioneering works [1], [2], [5], [6], [17], [18] have partially
+solved such challenges.
+Many inpainting works employ the attention mechanism
+to expand limited receptive fields [18], [21], [22]. Additionally, Fast Fourier Convolution (FFC) of global receptive
+fields is utilized in [2] to encode features in the frequency
+domain for resolution-robust inpainting. But the holistic
+structure is not explicitly modeled in [2]. Some transformerbased methods [17], [23] with long-range dependency first
+⋆ indicates equal contributions, † refers to the corresponding author.
+
+•
+
+Chenjie Cao, Qiaole Dong, and Yanwei Fu are with Fudan University,
+China. E-mail: {20110980001,qldong18,yanweifu}@fudan.edu.cn.
+
+fill Low-Resolution (LR) tokens and then upsample them
+with CNNs to address the huge memory footprint of transformers for large-scale images. On the other hand, various
+image priors have been explored for inpainting to preserve
+specific information, rather than directly address the illposed image inpainting, such as canny edges [5], [7], segmentation [24], [25], Relative Total Variation (RTV) [26],
+[27], learning based edges [28], gradients [29], and even
+semantic prior features [30]. Critically, Cao et al. [6] propose
+the concept of sketch tensor space, and exploit the structural
+priors of edges and wireframes [31] in the space to facilitate
+holistic structure recovery for image inpainting. However,
+these methods typically involve multi-stage or multi-model
+designs and are costly to be trained from scratch.
+Our previous conference work, ZITS [1], alleviates these
+issues with a well-designed architecture. Specifically, ZITS
+leverages a transformer-based model to recover canny edges
+and wireframe lines in low-resolution (LR) images and
+then upsamples these structural priors by a simple CNN
+module to High-Resolution (HR) cases. The upsampled
+edges and lines are used to strengthen a LaMa-based texture
+restoration. Moreover, ZITS also provides position clues for
+masked regions, which play a critical role in image generation [32], [33], [34]. To overcome the heavy training cost
+of the multi-stage model, ZITS repurposes an incremental
+training strategy called Zero-initialized Residual Addition
+(ZeroRA) [35] to finetune the off-the-shelf LaMa with holistic structure guidance. Despite these advancements, ZITS
+still faces some intractable dilemmas. 1) Canny edges used
+in ZITS fail to distinguish meaningful structures. As shown in
+Fig. 2(b), canny edges produce confusing textures in complicated environments rather than informative low-level
+structures. 2) There is a need for comprehensive investigations
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+(a) Masked image
+
+(b) Canny from ZITS
+
+(c) ZITS results (d) CATS from ZITS++ (e) ZITS++ results
+
+2
+
+(f) High-resolution inpainting results compared with LaMa (first) and our ZITS++ (second).
+
+Figure 1. Left (a)-(e): Comparisons of ZITS [1] and ZITS++ enhanced with canny and CATS respectively. Right (f): High-resolution (1024×768,
+1024×1024, 680×1024) inpainted results. Each image group: original image with inpainting mask, inpainted results by LaMa [2], and results of
+ZITS++. Please zoom-in for details.
+
+(a) Image
+
+(b) Canny Edges
+
+(c) CATS Edges
+
+Figure 2. Edge results from (b) canny detection [3] and (c) CATS [4]
+learning based edge detection. We use σ = 2 for canny, which is
+also adapted by most other inpainting methods [5], [6], [7]. Note that
+CATS edges have much clearer boundary structures and ignore highfrequency textures. But canny produces many meaningless edges from
+textures in column 1(b).
+
+into various image priors. While ZITS only considers canny
+edges and lines, other image priors also need to be explored.
+Additionally, understanding how these priors can be used
+in HR images is important for the inpainting community. 3)
+Improving LaMa’s performance for texture recovery. Although
+LaMa [2] performs well in texture recovery with robust
+resolutions, it still suffers from unstable training and could
+be further enhanced for the inpainting task.
+In this paper, we systematically address these problems
+upon our conference version [1] and propose an improved
+ZeroRA-based Incremental Transformer Structure (ZITS++)
+inpainting framework. We first briefly introduce our main
+ideas as follows. Particularly, Learning-based Edges (LEdges) are advocated as the important representations for
+meaningful holistic structures as illustrated in Fig. 2(c). A
+transformer-based model inherited from ZITS is presented
+to restore holistic structures that incorporate L-Edges, wireframe lines, and gradients. Critically, to adaptively leverage
+the structure upsampling mechanism of ZITS, we further
+iteratively upscale the grayscale L-Edges to arbitrary resolutions filtered by the Edge Non-Maximum Suppression
+(E-NMS). For the FFC-based Texture Restoration, we make
+
+significant improvements by incorporating Large Kernel Attention (LKA) modules [36] and other useful techniques. Importantly, we comprehensively study various image priors,
+including canny edges [3], wireframes [31], L-Edges [37],
+gradients, semantic segmentation, RTV [38], LR-RGB and
+Histograms of Oriented Gradients (HOG) [39]. Through
+empirical analysis in Sec. 3.6 and Sec. 4.5.1, we find that
+L-Edges, wireframe lines, and gradients are generally more
+effective than other priors. Moreover, L-Edges could also
+be effectively generalized to HR with E-NMS, which thoroughly outperforms canny edge. We highlight our new
+contributions of ZITS++ in Fig. 3. ZITS++ inherits the advantages of ZITS, including the decoupled structure and texture
+recoveries, flexible structure upsampling, and a lightweight
+finetuning strategy based on ZeroRA. We further enhance
+ZITS++ with stronger texture learning ability and more
+informative structural prior combinations, as demonstrated
+through convincing experiments and discussions.
+The workflow of ZITS++ and related technical details
+are listed in this paragraph. Formally, ZITS++ first recovers
+structural priors by a Transformer Structure Restorer (TSR)
+in 256×256. After the prior restoration, E-NMS is leveraged
+to eliminate ambiguous blur of the L-Edges’ boundaries.
+Then the output grayscale priors are upsampled by a Simple
+Structure Upsampler (SSU) which consists of a 4-layer CNN
+to meet the desired resolution. Upsampled priors are passed
+into Structure Feature Encoder (SFE) to extract structural
+features. After that, the FCC-based Texture Restoration
+(FTR) is used to restore textures, trained with ZeroRA
+and Masking Positional Encoding (MPE). Remarkably, we
+propose several novel techniques to improve the training process and significantly enhance FTR’s performance.
+Specifically, we promote the maxpool as the mask resizing
+strategy of PatchGAN instead of the nearest in LaMa. This
+technique leads to stable training as empirically evaluated
+in Sec. 3.3. Compared with the vanilla attention mechanism,
+LKA implemented by integrated convolutions [36] is further
+repurposed in FTR and enjoys both large receptive fields and
+scale invariance, which greatly strengthens the FTR in HR
+inpainting. To our knowledge, this is the first time that
+extremely large kernels have been used in inpainting tasks.
+Finally, we conduct extensive experiments on several
+datasets, including Places2 [40], Indoor [6], [31], [41], MatterPort3D [42], FFHQ [43], and our newly collected HRFlickr. The HR-Flickr dataset, which contains a group of
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+Masked
+Image
+
+3
+
+Transformer Structure
+Restoration (TSR)
+
+Prior
+Upsampling
+
+Fourier CNN Texture
+Restoration (FTR)
+
++ E-NMS to upsample
+learning-based edges
+
++ Large Kernel Attention
++ Improve model design
+
+Inpainted
+Result
+
++ Various Priors and Discussions
+
+Figure 3. The conceptual overview of ZITS++ based on ZITS [1]. We further highlight the newly proposed contributions in red.
+
+high-quality images, serves as a test set for HR image inpainting. These experiments reveal that our proposed model
+outperforms other state-of-the-art competitors.
+As a substantial extension of ZITS [1], we highlight the
+new contributions of ZITS++ as follows: (1) The initial work
+ZITS effectively recovers LR canny edges and lines with TSR
+and upscales them to HR for the image inpainting. This
+work further explores more image priors with extensive
+experiments. We find that L-Edges enjoy more valuable
+information for image inpainting. (2) We introduce the ENMS technique to flexibly upsample L-Edges to arbitrary
+resolutions, making them adaptive to the SSU introduced
+in ZITS. This technique provides critical structural clues for
+HR inpainting. (3) Our FTR is further improved with the
+maxpool mask resizing strategy and LKA, resulting in more
+stable training and better performance. (4) Additionally,
+we contribute to the inpainting community with a highquality HR image dataset–HR-Flickr, and conduct extensive
+inpainting experiments on various resolutions.
+
+2
+
+R ELATED W ORK
+
+2.1
+
+Image Inpainting
+
+Many classical approaches are explored to solve inpainting
+problems, which can be grouped as diffuision-based [44]
+and patch-based [45] methods. Unfortunately, these methods are typically restricted to low-level image features,
+and hard to generate expressive results with large holes.
+Learning-based methods equipped with GANs achieve
+great success in image inpainting [5], [19], [20], [46]. Concretely, Pathak et al. [46] show that adversarial training
+is critical to generate clear results for the inpainting. Furthermore, many bespoke inpainting convolutions are designed [47], [48], [49] to gracefully model generalized features for masked regions. Moreover, the attention mechanism is also well explored in the inpainting [18], [21],
+[48], which takes long-range relation and aggregates reliable
+features from unmasked regions to masked ones. Recently,
+StyleGAN [50] based co-modulated inpainting models [19],
+[20] have achieved high-quality generations enhanced with
+the style learning. Nevertheless, they [19], [20] are quite
+likely to hallucinate incompatible image content over the
+mask. Diffusion models [51] have also developed rapidly in
+image generation recently. However, training an inpaintingspecific diffusion model demands prohibitive computational cost with huge model parameters [52], [53], [54].
+While much more diffusion steps should be considered
+to infer the inpainted results as an inverse problem with
+off-the-shelf diffusion models [55], [56], [57]. Thus this is
+still very time-consuming. Although these pioneering works
+
+have tackled various problems in inpainting, they are generally incapable of reconstructing structural priors to maintain
+faithful inpainting results.
+2.2
+
+Inpainting by Auxiliaries
+
+Auxiliary information such as canny edges [5], [29], segmentation maps [24], [25], L-Edges [28] and gradients [29] shown
+promising improvements to image inpainting. Specifically,
+EdgeConnect [5] utilizes canny edges to facilitate inpainting images with certain structures. E2I [28] firstly tried
+to restore images with a two-stage inpainting model enhanced by HED [37]. Guo et al. [7] propose a two-stream
+network for image inpainting, which models the structureconstrained texture synthesis and texture-guided structure
+reconstruction in a coupled manner. SGE-Net [24] iteratively
+updates the semantic segmentation maps and the corrupted
+image. Moreover, RTV is used to filter high-frequency textures for structural recovery [26] and the decoupling structure/texture feature learning [27]. Our previous work [6]
+further proposes learning a sketch tensor space, composed
+of canny edges and lines for inpainting man-made scenes.
+Besides, for video inpainting, optical flow plays an important role to guide the sequence completion [58], [59],
+[60]. In this paper, inspired by the comprehensive study on
+auxiliary priors in Sec. 3.6 for the single view inpainting,
+L-Edges and lines are employed to model the structural
+priors. However, quite differs from [6], the transformer is
+explored to model structural priors in ZITS++. Preliminary
+investigations [61] have shown the excellent capability of
+transformers in modeling structural relationships for natural image synthesis. Besides, we provide sufficient discussions about various image priors for image inpainting and
+their performance extended to HR images. Hopefully, this
+could bring useful insights to the community.
+2.3
+
+Deep Learning Modules
+
+In this section, we provide some discussions about relevant
+deep learning modules. Transformers have been utilized in
+some inpainting works, while CNNs with large kernels are
+first employed for image inpainting in this paper.
+Transformers for Image Inpainting. Transformers [62]
+achieved good performance on many vision tasks by
+learning long-range interactions on sequential image
+patches [63], [64], [65], [66]. Transformer is also employed
+to inpaint image in [17], [23] at low resolution, and further
+guides GAN-based CNN to produce high-quality results.
+Unfortunately, directly using transformers to learn large
+image patches demands a huge memory footprint and computations. In contrast, this work utilizes a transformer to
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+4
+
+LKA
+Downsample
+
+FFC block
+
+LayerNorm
+
+FeedForward
+
+Vanilla
+Attention
+
+LayerNorm
+
+Column-wise
+Attention
+
+FeedForward
+
+LayerNorm
+
+LayerNorm
+
+Row-wise
+Attention
+
+Reshape
+
+LayerNorm
+
+Input features
+
+x3
+
+output image 𝐈$
+
+𝑺𝒌 ×𝜶𝒌 , (𝒌: 𝟎, 𝟏, 𝟐, 𝟑)
+
+Mask 𝐌
+
+%
+Recovered priors 𝐏
+C Concatenate
+
+Element-wise addition
+
+GateConv
+Upsample
+
+x3
+
+x3
+
+x3
+
+Structure Feature
+Encoder (SFE)
+
+LKA
+
+x3
+
+ReNetBlock
+
+x8
+
+DW-Conv2D
+
+GateConv
+Downsample
+
+x3
+
+Transformer Structure
+Restoration (TSR)
+
+Prior Upsampling
+
+Transformer
+block
+
+C
+
+CNN
+Upsample
+
+Conv2D+BN+Swish
+
+CNN
+Downsample
+
+Masked priors 𝐏
+
+x9
+
+Transformer Block
+
+Column-wise RPE
+
+Masked
+image 𝐈!
+
+x3
+
+LKA
+Upsample
+
+Fourier CNN Texture
+Restoration with LKA (FTR)
+
+Masking Positional
+Encoding (MPE)
+
+Row-wise RPE
+
+DW-D-Conv2D
+Conv2D 1x1
+
+FFN
+
+LKA Inpainting Block
+
+Figure 4. Overview of ZITS++. Given corrupted images, TSR is used to restore structures at low resolution. Then, the upsampled sketch space is
+encoded by SFE and added to the FTR through ZeroRA to restore the textures. The top left corner shows details about the transformer block, while
+the bottom right corner illustrates the LKA inpainting block.
+
+build LR holistic structure reconstruction, which helps to
+guide HR image inpainting. Note that the upsampling for
+grayscale structures enjoys fewer ambiguities and information loss, which successfully transfers structure clues to HR.
+CNNs with Large Kernels. CNNs with large kernels attract
+some research attention recently. Except for the global CNN
+learning in the Fourier domain [67], Ding et al. [68] propose
+to enlarge the kernel size to 31×31 with several tricks and
+achieve better performance in many downstream tasks. The
+kernel size is further enlarged to 51 with the sparsity in [69].
+To balance the computation, large kernel convolutions are
+decomposed into a depth-wise convolution, a depth-wise
+dilation convolution, and a point-wise convolution in [36].
+We show that such approximately large kernels can work
+properly in image inpainting compared with vanilla convolutions, dilated ones, and even FFC.
+
+3
+
+M ETHOD
+
+Overview. The whole pipeline of ZITS++ is illustrated in
+Fig. 4. Given masked image Im , masked priors P, and
+binary mask M, we concatenate and input them to the TSR
+model for restored priors P̃ = TSR(Im , P, M) (Sec. 3.1).
+Note that the priors of L-Edges are directly produced by
+TSR. And we include an extensive discussion of priors in
+Sec. 3.6. Then the selected grayscale structures (lines and
+edges) can be easily combined and upsampled into arbitrary
+sizes for HR inpainting (Sec. 3.2). Gated convolution based
+SFE extracts multi-scale features {Sk }3k=0 = SFE(P̃, M)
+from upsampled sketches. We incrementally add {Sk }3k=0 to
+related layers of the FTR enhanced by LKA and Fourier convolutions as Ĩ = FTR(Im , M, {αk · Sk }3k=0 ) (Sec. 3.3) with
+the residual addition of zero-initialized trainable parameter
+αk (ZeroRA) (Sec. 3.4).
+3.1
+
+Transformer Structure Restoration (TSR)
+
+Since the transformer shows an ability to get expressive
+global structure recoveries [17], we leverage the capacity of
+the transformer to restore holistic structures in a relatively
+low resolution. For the input masked priors P, and mask M
+
+in 256 × 256, we firstly downsample them with three convolutions to reduce computation for attention learning. Such
+simple convolutions can also inject beneficial convolutional
+inductive bias for vision transformers compared with the
+patch-based MLP embedding [70]. Then we add a learnable
+absolute position embedding to the feature at each spatial
+position and get X ∈ Rh×w×c for the input to attention
+layers, where both the height h and width w are 32, while
+c = 256 is the feature channel.
+To overcome the quadratic complexity of standard selfattention [62], we alternately use axial attention modules [71], [72] and standard attention modules as illustrated in Fig. 4(top-left). The axial attention module can
+be implemented easily by adjusting the tensor shape for
+row-wise/column-wise and then processing them with dot
+product-based self-attention respectively. To improve the
+spatial relation, we also provide Relative Position Encoding
+(RPE) [73] for each axial-attention module. For the input
+feature X ∈ Rh×w×c , we suppose that xri , xrj , xci , xcj ∈ Rc
+mean feature vectors of rows i, j and columns i, j of X. Then
+the row and column-wise RPE based axial attention scores
+Arow , Acol can be written as
+T T
+row
+Arow
+i,j = xri Wrq Wrk xrj + Ri,j ,
+T T
+col
+Acol
+i,j = xci Wcq Wck xcj + Ri,j ,
+
+(1)
+
+where Wrq , Wrk , Wcq , Wck are trainable parameters for
+row
+is the trainable
+query and key in row and column; Ri,j
+col
+RPE value between row i and j , and Ri,j
+means the RPE
+value between columns i, j . Then, the attention scores are
+processed by the softmax operation. To stabilize the training,
+we advocate the pre-norm trick in [74]. Compared with the
+O(n2 ) complexity of the standard self-attention, the axial at3
+tention only has O(2n 2 ), which allows us can handle more
+attention layers for a better model capacity. Additionally,
+we also retain some vanilla attention modules in TSR for
+learning better global correlation.
+After the encoding of stacked transformer blocks, features are upsampled by three transpose convolutions for
+outputting structures P̃ in 256×256 resolution. Various priors could be recovered by TSR; and corresponding loss functions are specified in Sec. 3.6. The motivation for processing
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+(a) RGB image
+
+(b) 256x256 edge
+
+(c) 512x512 edge
+
+(d) 256x256 line
+
+5
+
+(e) 512x512 line
+(a) FID of LaMa trained with nearest and maxpool
+
+(b) Origin mask (256x256)
+
+(c) Maxpool resized (16x16)
+
+(d) Nearest resized (16x16)
+
+Figure 7. The influence of different mask resizing strategies for LaMa on
+the Places2 subset of 25,000 training and 500 validation images over 5
+scenes. LaMa worked with nearest resizing is unstable.
+(f) Nearest resizing
+
+(g) Bilinear resizing
+
+(h) Cubic resizing
+
+(j) Upsampled edge and line from the model
+trained with both edge and line
+
+(i) Antialias resizing
+
+(k) Upsampled edge and line from the model
+trained with line only
+
+Figure 5. (a)–(e) indicate the ground truth images and structures. (b)
+and (c) show obvious ambiguities between canny edges extracted from
+different image scales. (f)–(i) show resizing edges of different interpolations. The learning-based upsampling edge from (k) has significantly
+superior quality compared with the one from (j).
+
+(a) Masked Image
+
+(b) TSR CATS (256)
+
+(c) After E-NMS (256)
+
+(d) 512x512 from SSU
+
+(e) 1024x1024 from SSU
+
+Figure 6. Illustration of E-NMS and SSU work well for CATS edges,
+produced from TSR.
+
+the structural priors in 256×256 is to save the computation
+and memory for the attention-based TSR. And we further
+show our SSU module in Sec. 3.2 can flexibly upsample
+these priors to a higher resolution. Note that more detailed
+structural priors are unnecessary as compared between LEdges and canny edges in our experiments. Because TSR
+should focus on the low-frequency recovery while FTR
+could make up for the high-frequency missing.
+3.2
+
+Table 1
+Quantitative ablations of FTR based on the Places2 subset of 25,000
+training and 500 validation images over 5 scenes. ‘AddConv’ means
+additional convolution types utilized in the upsampling and
+downsampling modules of FTR. ‘Conv2D+’ indicates using more 2D
+convolutions to balance the computation compared with FFC and LKA.
+Numbers in brackets beside the LKA mean effective kernel sizes.
+
+Upsampling Priors
+
+Upsampling Edges and Lines. To capture holistic structures for higher resolution images, we should upsample the
+generated priors P̃ to arbitrary scales without obvious degeneration. Particularly, upsampled structures can achieve
+superior performance as empirically analyzed in Sec. 4.5.1.
+However, vanilla interpolation-based resizing causes the
+aliasing effect to lines as well as edges as in Fig. 5(f)–(i).
+Such artifacts are more serious for large image sizes and
+deteriorate the inpainted results. To address this issue, we
+train a CNN-based SSU to upsample lines to a doubled size.
+Since lines obtained from a wireframe parser have good discrete representations [31], [75], i.e., a line can be indicated as
+positions of two endpoints and their relation, we can draw
+line maps in various resolutions without any ambiguities
+as in Fig. 5(d) and Fig. 5(e). Through iterative calling, we
+can get high-quality lines at higher resolutions. Remarkably,
+despite the lines can be upsampled successfully, edges fail to
+get correct results with the same training strategy as shown
+in Fig. 5(j). Because there are ambiguities in the canny edge
+
+Resizing
+
+Activation
+
+Nearest Maxpool ReLU Swish
+
+"
+
+"
+"
+"
+"
+"
+"
+"
+
+"
+"
+"
+"
+"
+"
+"
+
+"
+
+AddConv PSNR↑ SSIM↑ FID↓ LPIPS↓
+–
+–
+Conv2D+
+FFC
+LKA(14)
+LKA(21)
+LKA(28)
+LKA(21)
+
+25.00
+25.07
+24.99
+25.07
+25.15
+25.12
+25.13
+25.18
+
+0.876 25.09
+0.876 25.05
+0.874 25.42
+0.876 24.15
+0.878 23.76
+0.877 23.31
+0.877 23.56
+0.878 23.44
+
+0.109
+0.110
+0.111
+0.107
+0.105
+0.104
+0.105
+0.102
+
+from different image sizes as in Fig. 5(b) and Fig. 5(c). And
+L-Edges suffer from a similar issue, i.e., edges extracted from
+different image scales enjoy inconsistent results. Interestingly, we find that if the upsampling module is only trained
+in lines, it can also produce smoothed edge maps at higher
+resolution, thanks to the generalization of the network as in
+Fig. 5(k). Such a good property can also be generalized for
+upsampling L-Edges after E-NMS as introduced below.
+E-NMS for L-Edges. We promote the learning-based edges
+– CATS [4], rather than canny edges in [1]. Such priors can
+also be well generalized to the cases of higher resolution
+with the newly introduced E-NMS and our SSU trained
+with lines. As in Fig. 6, we take E-NMS in edge evaluation
+of [76] and implement E-NMS in PyTorch to filter uncertain
+edge predictions. Then the filtered edges are further binarized. Thus SSU can iteratively upsample CATS edges as
+lines. E-NMS significantly eliminates ambiguous blur and
+artifacts near the boundaries and improves the performance
+during HR inpainting as in Sec. 4.5.1. To avoid losing information potentially, we maintain low confident areas with
+resized CATS prediction, while high confident boundaries
+are processed as E-NMS boundaries. E-NMS let L-Edges
+retain sufficient information in arbitrary resolutions. So it
+is unnecessary to iteratively Mask-Predict edges as in [1],
+which saves lots of inference time. More details about the
+E-NMS are discussed in the supplementary.
+3.3
+
+Fourier CNN Texture Restoration with LKA (FTR)
+
+For the texture restoration, we adopt Fourier convolutions [67] from LaMa [2] for learning in the frequency
+domain. Note that FTR also works as the pre-trained inpainting model for our ZeroRA finetuning with structural
+priors from TSR. As in Fig. 4, FTR is an autoencoder-based
+model. The key module of FTR is the FFC layer with two
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+branches: 1) the local branch uses conventional convolutions and 2) the global branch convolutes features after the
+fast Fourier transform. Then two branches are combined
+for larger receptive fields and local invariance during the
+inpainting [2]. Unfortunately, LaMa didn’t explicitly learn
+reasonable holistic structures, which is addressed in ZITS++.
+Improving FTR from LaMa. Although LaMa can produce
+high-quality inpainted results, the training of LaMa is quite
+unstable even with the EMA as compared in Fig. 7(a) on
+the Places2 subset. We expose that such an unstable training
+suffers from the resizing way of PatchGAN [77]. For the
+patch-wise fake loss optimization of the discriminator, LaMa
+leverages the nearest resizing, where some partially masked
+patches are defined as unmasked ones as in Fig. 7(d).
+Instead, we find that using maxpool resizing as Fig. 7(c)
+can greatly stabilize the training process. It means that
+partially masked patches should be considered as ‘fake’
+patches rather than ‘real’ ones for inpainting. Besides, we
+upgrade all activation in the generator of FTR to Swish [78],
+which has been shown to be effective in many generation
+works [50], [64]. Detailed ablation studies of the improved
+FTR are shown in Tab. 1.
+LKA Inpainting Module. It has been well explored that
+large receptive fields are important for image inpainting [2],
+[49]. FFC used in LaMa [2] has the global receptive field in
+the frequency domain. However, FFC fails to learn reliable
+feature relations between masked regions and unmasked
+ones. On the other hand, various attention mechanisms with
+long-range dependencies are also incorporated into many
+inpainting methods [18], [20], [21]. But these attention-based
+methods inevitably overfit certain resolutions without scale
+invariance. To unify the advantages of both CNN and attention, we propose to inject large-kernel based convolutions
+into FTR. We follow [36] to decompose LKA with K × K
+K
+receptive fields into a ⌈ K
+d ⌉ × ⌈ d ⌉ Depth-Wise Convolution (DW-Conv2D) with dilation d, a (2d − 1) × (2d − 1)
+depth-wise dilation convolution (DW-D-Conv2D), and a
+point-wise convolution (Conv2d 1×1) as in the lower right
+corner of Fig. 4. LKAs are incorporated into upsampling
+and downsampling blocks of FTR, which are orthogonal
+to FFCs. Because LKAs devote to learning better feature
+representations for masked regions with large receptive
+fields, FFCs tend to facilitate the global learning for regular
+textures in the frequency domain. Furthermore, we also use
+shortcuts with 3×3 convolutions as Feed Forward Networks
+to ensure the generalization of LKA. Our empirical ablations
+in Tab. 1 show that LKAs work better than FFCs and vanilla
+convolutions. Thus LKA with K = 21 is used in ZITS++.
+3.4
+
+ZeroRA Learning for Structural Priors
+
+3.4.1 Structure Feature Encoder (SFE)
+For the given restored priors P̃ in arbitrary scales, a fully
+convolutional network is employed to process them into a
+feature space. Our SFE is also an autoencoder model with
+3 layers of downsampling convolutions (encoder), 3 layers
+of residual blocks with dilated convolutions [79] (middle),
+and 3 layers of upsampling convolutions (decoder). For the
+encoder and the decoder in SFE, we use Gated Convolutions
+(GCs) [48] to transfer useful features selectively. GC learns
+another sigmoid activation with the same channels. Then
+
+6
+
+(a) Input mask
+
+(b) Masking distance 𝐃!"#
+
+(c) Four channels of masking directions 𝐃!"$
+
+Figure 8. The illustration of our masking relative position encoding. (a)
+Input mask, (b) masking distance Ddis and the all-one 3×3 kernel, (c)
+masking directions Ddir and their kernels.
+
+the sigmoid features are multiplied by the convoluted ones
+as outputs. Although GCs are widely used in image inpainting for better generalization to irregular masks, we use
+GCs to filter useful features to FTR. Because the grayscale
+sketch space is sparse, and not all features are necessary for
+the inpainting. Then, 4 coarse-to-fine feature maps {Sk }3k=0
+from the last middle layer and 3 decoder layers are selected
+to transfer structural features to FTR as
+
+S0 , S1 , S2 , S3 = SFE(P̃, M),
+
+(2)
+
+where M indicates the resized binary mask.
+3.4.2
+
+Masking Positional Encoding (MPE)
+
+Although the zero-padding in CNNs can provide some
+position information [32], it only contains information about
+spatial anchors [33]. Therefore, generated central regions
+from GANs tend to repeat meaningless artifacts without
+specific position encoding. When the image size is large,
+the effect of zero-padding will be further weakened, which
+causes more repeated artifacts [34] to generators.
+During the inpainting, position information for unmasked regions is unnecessary, because the model always
+knows the ground truth of unmasked image regions. However, we think that position information is still critical for
+masked regions, especially when mask areas are large for
+HR images. Limited by the receptive fields of CNNs, the
+model with large masks may lose the direction and position
+information, which causes meaningless artifacts. Although
+FFC can extend the feature learning to the frequency domain, it is insensitive to distinguish masked or unmasked
+regions. Therefore, we propose to use position encoding in
+masked regions called MPE for the image inpainting, which
+is orthogonal to and improves upon the FFC in FTR.
+Specifically, our MPE can be expressed as the masking
+distance Edis and the masking directions Edir as shown
+in Fig. 8. Given an inversed 256×256 binary mask, where
+one indicates unmasked regions and zero indicates masked
+regions, we use a 3×3 all-one kernel to calculate the masking
+distance Ddis for each position in masked regions as shown
+in Fig. 8(b). Then, the distance is clipped and mapped
+by the Sinusoidal Positional Encoding (SPE) [62] to get
+Edis ∈ R256×256×d
+i
+
+Edis,2i = sin(clip(Ddis , 0, Dmax )/10000 d ),
+i
+
+Edis,2i+1 = cos(clip(Ddis , 0, Dmax )/10000 d ),
+
+(3)
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+7
+
+where i indicates the channel index; Dmax = 128, and
+d = 64 means the total channels of Edis , which is the
+same as the first convolution of FTR. Since SPE can only
+provide absolute positional information [33], Edis can be
+further resized by the nearest interpolation to various scales
+during the training for learning relative positional information in arbitrary resolutions. For masking directions, we
+use 4 different binary kernels to get the 4-channel one-hot
+vector Ddir ∈ R256×256×4 . Values of Ddir depend on which
+kernel covers the masked regions firstly. Ddir shows the
+nearest direction from a masked position to an unmasked
+one as shown in Fig. 8(c). Note that the masking direction
+is a multi-label vector, because a pixel may have more
+than one shortest direction. Then Ddir is projected to a d
+dimension features with learnable embedding parameters
+Wdir ∈ R4×d as
+
+Edir = Ddir × Wdir ∈ R256×256×d .
+
+(4)
+
+Edis and Edir are added as MPE to the first layer of FTR.
+
+with additional information. We could also apply ZeroRA
+to other locations except before the convolution, while the
+equivalence at the beginning of finetuning is unchanged.
+Empirically, we find that ZeroRA before the convolution is
+stable enough in our experiments.
+3.5
+
+Training Pipeline and Loss Functions
+
+We first pre-train FTR as a regular GAN-based inpainting
+model. Meanwhile, the TSR is trained separately for the
+prior reconstruction. Note that L-Edges and lines are jointly
+learned by a single TSR because they enjoy complementary
+information for each other. Then we finetune FTR with
+priors recovered from TSR through SFE. ZeroRA is utilized
+to facilitate the finetuning. More details are in Sec. 4.2.
+We adopt the same loss functions as [2], which include
+L1 loss, adversarial loss, feature match loss, and High Receptive Field (HRF) perceptual loss [2]. First, L1 loss is only
+calculated within the unmasked regions as
+
+LL1 = (1 − M) ⊙ |Î − Ĩ|1 ,
+3.4.3
+
+Zero-initialized Residual Addition (ZeroRA)
+
+Since most inpainting methods are based on sophisticated
+GANs nowadays, training the inpainting model incrementally is non-trivial. However, benefiting from various auxiliary information [5], [6], [24], incrementally training is flexible to improve the image inpainting. To improve the pretrained inpainting model (i.e., FTR in ZITS++) incrementally
+with holistic structures, we propose to use ZeroRA, which
+has been leveraged in [35] to replace the layer normalization
+in the transformer. Compared to training from scratch with
+auxiliary information, ZeroRA can save 11 days’ computations on 256 × 256 resolution Places2 with 3 V100 16
+GB GPUs. The idea of ZeroRA is simple. For the given
+input feature x, the output feature x′ is got from adding a
+skip connection with function F to x with a zero-initialized
+trainable residual weight α as
+
+x′ = x + α · F (x).
+
+(5)
+
+For simple linear-based models, if α is initialized in zero, the
+input-output Jacobian will be initialized to 1, which makes
+the training stable. For more complex cases, experiments
+in [35] also prove the effectiveness of ZeroRA. Since ZeroRA
+can replace the layer normalization in the transformer, it can
+also improve the expressive power of the model without
+degrading variances to early layers.
+In our case, we use ZeroRA to incrementally add structural information from SFE to FTR. Specifically, 4 zeroinitialized {αk }3k=0 are utilized to fuse 4 related feature
+maps {Sk }3k=0 from SFE. For the feature Xk of FTR encoder
+layer k , which is based on Conv-BatchNorm-ReLU, we add
+residuals as follows
+
+Xk+1 = Conv(Xk + αk · Sk ),
+Xk+1 = ReLU(BatchNorm(Xk+1 )).
+
+(6)
+
+Another benefit of ZeroRA-based incremental learning is
+that it preserves the equivalent output of the pre-trained
+model at the start of finetuning. This helps to stabilize the
+training and adaptively transfer the necessary information.
+Our ablation studies show that the ZeroRA is important
+to incrementally finetune the pre-trained inpainting model
+
+(7)
+
+where M indicates 0-1 mask that 1 means masked regions;
+⊙ means the element-wise multiplication; Î, Ĩ indicate the
+ground truth and predicted images respectively. The adversarial loss consists of the discriminator loss LD and the
+generator loss LG . Moreover, we only regard features from
+masked regions as fake samples in LD . The PatchGAN [77]
+based discriminator is written as D and the combination
+of FTR and SFE can be seen as the generator G, Then the
+adversarial loss can be indicated as
+h
+i
+h
+i
+LD = − EÎ logD(Î) − EĨ,M logD(Ĩ) ⊙ (1 − M)
+h
+i
+− EĨ,M log(1 − D(Ĩ)) ⊙ M ,
+(8)
+h
+i
+LG = −EĨ logD(Ĩ) ,
+
+Ladv = LD + LG + λGP LGP ,
+where LGP = EÎ ||▽Î D(Î)||2 is the gradient penalty [80] and
+λGP = 1e − 3. We also use the feature match loss [81] Lf m ,
+which is based on L1 loss between discriminator features
+of true and fake samples. Lf m is usually used to stable
+the GAN training. It can also slightly improve performance.
+Furthermore, we use the HRF loss Lhrf in [2] as
+h
+i2
+Lhrf = E( ϕhrf (Î) − ϕhrf (Ĩ) ),
+(9)
+where ϕhrf indicates a pre-trained segmentation ResNet50
+with dilated convolutions. As discussed in [2], using HRF
+loss instead of the perceptual loss can improve the quality
+of the inpainting model. The final loss of our model in the
+incremental training can be written as
+Lf inal =λL1 LL1 + λadv Ladv + λf m Lf m + λhrf Lhrf ,
+
+(10)
+
+where λL1 = 10, λadv = 10, λf m = 100, λhrf = 30.
+3.6
+
+Various Priors for Inpainting
+
+In this section, we introduce various priors, which are
+roughly categorized as classical priors, and learning-based
+priors. The classical priors have canny, gradients, RTV,
+HOG, and LR-RGB, while the latter one will consider the
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+(a) Image
+
+(b) Canny
+
+(c) Gradients
+
+(d) RTV
+
+(e) HOG
+
+8
+
+(f) LR-RGB
+
+(g) Wireframes
+
+(h) HED
+
+(i) CATS
+
+(j) DexiNed
+
+(k) Segmentation
+
+Figure 9. Visualizations of different priors discussed in this paper. We combine gradients in both x and y directions for a consistent representation.
+
+decoupling has been demonstrated useful to image inpainting [26], [27]. We follow [26] to use Gaussian kernel σ = 3
+and smooth degree λ = 0.015 to extract structural features
+from 256 × 256 images. Then, L1 loss is taken to optimize
+RTV priors P̃rtv .
+Others. Additionally, we also compare the priors of
+HOG [39] and Low-Resolution RGB Pixels (LR-RGB), as
+details are in the supplementary.
+(a) Masked image
+
+(b) Lines from HAWP
+
+(c) Lines from LSM-HAWP
+
+(d) CATS edges
+
+(e) CATS from TSR
+
+Figure 10. Learning-based priors extracted from masked images. From
+left to right, (a) masked images, (b) lines from HAWP [75], (c) lines from
+masking augmented LSM-HAWP [6], (d) masked CATS edges from [37],
+(e) predicted CATS edges from our TSR.
+
+wireframes, L-Edges, and semantic segmentation. Learningbased priors employ deep models to extract priors from
+images. These priors will be negatively affected by masked
+images [24], as no visual content is available. Visualizations
+of these priors are in Fig. 9. In this subsection, we still use the
+Place2 subset of 25,000 training and 500 validation images
+over 5 scenes for the pilot study.
+3.6.1
+
+Classical Priors
+
+Canny Edges. Following [5], we set σ = 2 as the Gaussian
+blur coefficient for the 256 × 256 canny detection. Canny
+edge priors P̃ce are optimized with Binary Cross-Entropy
+(BCE) loss in TSR. We use the Mask-Predict [82] trick and
+sigmoid temperature parameters for better canny edge predictions as in [1].
+Gradients. The gradient prior is also used as an auxiliary
+loss for inpainting in [29]. As in [29], we use Sobel filters
+to extract ground truth RGB gradients P̂g in two directions,
+i.e., horizontal and vertical gradient maps. Gradient priors
+P̃g are optimized by L1 loss with edge regularization as [29]:
+
+Lgrad = β1 E[||P̃g − P̂g ||1 ]+β2 E[(g∗C)⊙||P̃g − P̂g ||1 ], (11)
+where ∗ and ⊙ means convolution and element-wise multiplication; g is a 10 × 10 Gaussian filter with standard
+deviation 1; C is canny edge; β1 = 0.1; β2 = 20.
+Relative Total Variation (RTV). Xu et al. [38] propose to
+use RTV maps to decouple structures and textures. Such
+
+3.6.2 Learning-based Priors
+Lines. The common solution of wireframe parsing is to
+achieve endpoint heatmaps at first, and then verify valid
+endpoint pairs through verification modules [31], [75], [83].
+However, these wireframe parsers are unable to produce
+reliable endpoint heatmaps from corrupted images as discussed in [6]. Thus we employ the masking augmented
+wireframe parser, –LSM-HAWP [6] to extract lines from
+masked images. Specifically, we use anti-aliased lines to
+link endpoint pairs to achieve the ground truth line priors
+P̂l . For simplicity, we directly mask ground truth priors
+P̂l as masked ones Pl for training. During the inference,
+LSM-HAWP can be well generalized to masked images as
+illustrated in Fig. 10. The reconstructed lines P̃l are also in
+grayscale, so we can optimize them with BCE.
+L-Edges. L-Edges such as HED [37], CATS [4], and DexiNed [84] enjoy good properties to decouple structures and
+textures. So it is interesting to understand which type of LEdges is in good favor of the inpainting task. As in Fig. 9(h)(j), we give some observations: HED edges are more indecisive near boundaries; CATS edges can get clearer results,
+but lose some continuous information; DexiNed edges can
+extract very dense L-Edges greatly benefited by learning
+from fine-grained annotations. However, these L-Edges also
+suffer from corrupted images, as the example of CATS edges
+in Fig. 10(d). To this end, we make TSR work for both
+edge detection and recovery trained with BCE on masked
+regions. This strategy can be well generalized to masked
+images without information leakage as in Fig. 10(e). And,
+only one forward pass is needed to achieve binary L-Edge
+priors P̃le from TSR.
+Semantic Segmentation. Priors from semantic segmentations show good performance in inpainting [24], [25]. But
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+9
+
+such priors are largely influenced by corrupted images [24].
+Here we leverage an off-the-shelf ADE20K [85] pre-trained
+segmentation SETR model [86] to extract ground truth segmentation priors P̂s from unmasked images. The masked
+priors Ps are directly masked from P̂s . Particularly, note
+that such a prior setting can only serve as the performance upper bound of segmentation priors, in order to help
+understand how much segmentation can help inpainting.
+The number of SETR categories is reduced from 150 to 20
+with a threshold of 0.0115 for the label frequency in the
+Places2 subset (Sec. 4.5.1). The rest 130 categories are merged
+into another new label (21st category). The CE is used to
+optimize the generated P̃s .
+3.6.3 Discussion of Various Priors
+In this work, we utilize the L-Edge CATS, wireframe lines,
+and gradients as our priors for the inpainting on the
+256×256 images. Gradients are not used for the inpainting
+at higher resolution, as we empirically compare and discuss
+various priors in Sec. 4.5.1.
+Why L-Edges outperform other priors? In general, L-Edges
+produce more significant boundaries rather than trivial edges
+from textures (canny) as visualized in Fig. 2. Such structural
+boundaries of L-Edges reflect the scene-level understanding of the image. Here we adopt CATS from all L-Edges
+since CATS outperforms HED and DexiNed for inpainting.
+Particularly, HED and DexiNed give blurry edges over the
+image regions of boundaries and high-frequency details
+respectively as illustrated in Fig. 19. Furthermore, CATS can
+be well generalized to HR cases with the E-NMS and upsampling of SSU in Sec. 3.2. In contrast to other priors, such
+as gradients and RTV, SSU cannot tackle the upsampling of
+them, which leads to degradation and artifacts for unseen
+scales (1024) during the training as in Tab. 9 and Fig. 18. For
+the consistent LR inpainting (256×256), our model further
+includes the gradient that outperforms all other priors.
+Effect of Wireframe Lines. From Tab. 8, the wireframe line
+works compatibly with CATS and gradients, and prominently improves FID and LPIPS for both image inpainting
+at 256 × 256 and 512 × 512 resolution. Such phenomenon
+indicates that lines can provide simple but strong structural
+priors to overcome artifacts during the generation as in
+Fig. 19(b), especially for large masking regions and HR
+inpainting. Moreover, lines enjoy great advantages for manmade scenes as studied in [6]. In practice, by using the same
+TSR, lines can be jointly trained and inference with CATS at
+negligible additional cost.
+
+4
+
+E XPERIMENTS
+
+Datasets. Our model is trained on two datasets: Places2 [40]
+and our custom indoor dataset (Indoor). For Places2, we use
+about 1,800k images from various scenes as the training set,
+and 36,500 images as the validation. To better demonstrate
+the structural recovery, we collect 5,000 images from ShanghaiTech [31] and 15,055 images from NYUDepthV2 [41] to
+build the custom 20,055 Indoor training dataset. For the
+Indoor validation, we collect 1,000 images which consist of
+462 and 538 images from ShanhaiTech and NYUDepthV2
+respectively. Places2 and Indoor can all be tested in both
+256×256 and 512×512.
+
+Figure 11. High-quality images from HR-Flickr with 1k, 2k, and 4k
+resolutions.
+
+High-Resolution Testing Dataset. To further explore the
+performance of HR inpainting, we also test the inpainting
+ability on both MatterPort3D [42] and our released HR
+image dataset. MatterPort3D [42] comprises 1,965 indoor
+images in 1280×1024, which is used to evaluate the HR
+inpainting ability in man-made scenes. We resized them
+into 1024×1024. For more comprehensive comparisons in
+challenging HR scenes, we introduce HR-Flickr as below.
+
+4.1
+
+HR-Flickr Dataset
+
+For the HR cases with more diversity, we newly release
+a group of high-quality images collected from Flickr with
+downloading permissions from owners, called HR-Flickr.
+HR-Flickr consists of 500/500/490 HR images with resolutions 1k, 2k, and 4k respectively as shown in Fig. 11. Images
+from each group of specific resolution have maximum side
+lengths which are equal to the corresponding group resolution (1024, 2048, 4096). Moreover, images with persons are
+eliminated by segmentation methods and manual checking
+from HR-Flickr to reduce the privacy risk as far as possible.
+Compared with other HR datasets, such as DIV2K and
+Flickr2K [87], our dataset contains 4k images from SingleLens Reflex cameras (SLR), which enjoy high quality without any interpolated zoom-in. Furthermore, HR-Flickr has
+more diverse and challenging cases for image inpainting,
+while we manually filter images with too simple textures or
+monotonous scenes. Moreover, we carefully remove images
+of personal information to protect privacy.
+4.2 Implementation Details
+Training Settings. Our ZITS++ is implemented with PyTorch. For the training of TSR, we use the Adam optimizer
+of learning rate 6e-4 with 1,000 steps warmup and cosine
+decay. TSR is trained with 150k and 400k steps for Indoor
+and Places2. On the other hand, we first train the FTR with
+Adam optimizer of learning rates 1e-3 and 1e-4 for the generator and discriminator respectively. And FTR is trained
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+10
+
+Table 2
+Quantitative results on Indoor and Places2 in 256×256. The best
+results are in bold, while the second-best ones are underlined.
+
+Table 4
+Quantitative Precision (P.), Recall (R.) and F1-score (F1) of L-Edges
+(CATS [4]) and lines on Indoor and Places2.
+
+Indoor
+Places2
+PSNR↑ SSIM↑ FID↓ LPIPS↓ PSNR↑ SSIM↑ FID↓ LPIPS↓
+EC [5]
+MST [6]
+HiFill [18]
+Co-Mod [19]
+LaMa [2]
+ZITS [1]
+ZITS++(ours)
+
+24.07
+24.52
+25.20
+25.57
+26.15
+
+0.884 22.02
+0.894 21.65
+0.902 16.97
+0.907 15.93
+0.917 14.61
+
+0.135
+0.122
+0.112
+0.098
+0.090
+
+23.31
+24.02
+20.76
+22.57
+24.37
+24.42
+25.13
+
+0.839 6.21
+0.862 3.53
+0.770 21.33
+0.843 1.49
+0.869 1.63
+0.870 1.47
+0.884 1.19
+
+0.149
+0.137
+0.246
+0.122
+0.155
+0.108
+0.094
+
+Table 3
+P-IDS and U-IDS on Indoor and Places2 in 256×256. The best results
+are in bold, while the second best ones are underlined.
+(%)
+
+EC MST HiFill LaMa ZITS ZITS++ Co-Mod MAT
+
+P-IDS↑ 0.80 1.00
+Indoor
+U-IDS↑ 14.55 15.25
+Places2
+
+-
+
+5.00 7.90 11.1
+24.30 30.55 33.05
+
+P-IDS↑ 3.06 10.38 1.21 20.21 22.49 23.93
+U-IDS↑ 23.60 31.80 14.11 38.56 39.89 40.61
+
+-
+
+-
+
+28.65
+40.96
+
+25.42
+39.15
+
+with 100k steps on Indoor and 800k steps on Places2. Then,
+we incrementally finetune them with ZeroRA for 50k and
+150k steps on Indoor and Places2 respectively, and reduce
+the generator learning rate to 3e-4. Besides, we warmup
+the learning rate for training the SFE with 2,000 steps. For
+the training of TSR and FTR, input images are resized into
+256×256. For the incremental finetuning, we separately train
+two versions of ZITS++, which are the version trained in
+256×256 and the version trained in random size from 256
+to 512. The second model can handle some situations with
+higher-resolution inputs. And the MPE is also changed to a
+relative position encoding for the random size training.
+Mask Settings. To tackle the real-world object removal
+task, we follow the mask setting from [6], which includes
+irregular masking brushes and segmentation masks with
+masking rates from 10% to 50%. Different from [6], we
+additionally use some LaMa irregular masks [2] (both thin
+and thick types) for better diversity, and randomly combine
+irregular and segmentation masks with 20% to improve the
+learning difficulty.
+Competitors. Our conference version [1] uses canny edges
+and lines is denoted as ZITS [1], while ZITS++ indicates
+our improved version in this paper enhanced by the priors
+of CATS, gradients, and lines, as well as several novel
+modules and techniques. We compare the proposed model
+with other state-of-the-art methods, which include Edge
+Connect (EC) [5], Contextual Residual Aggregation (HiFill) [18], Multi-scale Sketch Tensor inpainting (MST) [6],
+Co-Modulation GAN (Co-Mod) [19], Mask-Aware Transformer (MAT) [20], and Large Mask inpainting (LaMa) [2].
+All competitors are compared in Places2. We also retrain
+EC, MST, and LaMa for the Indoor dataset to discuss the
+structure recovery. Note that the LaMas compared below
+are all trained with the same total steps as ZITS++.
+4.3
+
+Quantitative Comparisons
+
+Quantitative Inpainting Results. In Tab. 15, we utilize
+PSNR, SSIM [88], FID [89], and LPIPS [90] to assess the performance of all compared methods including our conference
+
+P.
+
+L-Edge
+R.
+F1
+
+P.
+
+Line
+R.
+
+F1
+
+Avg
+F1
+
+Indoor
+
+MST 34.97 24.15 28.55 30.64 25.75 27.85 28.20
+Ours 58.72 48.54 52.07 61.10 66.42 62.66 57.36
+
+Places2
+
+MST 28.56 19.27 23.00 32.00 18.36 23.23 23.12
+Ours 42.05 53.49 45.57 45.11 59.33 49.75 47.66
+
+version on the Indoor and Places2 datasets in 256×256 with
+mixed segmentation and irregular masks. More results with
+different masking rates are shown in the supplementary.
+For Indoor, our ZITS++ and ZITS achieve the best and the
+second best results on all metrics. MST can get slightly better
+results compared with EC, which is benefited from the usage
+of lines. LaMa can get more acceptable FID and LPIPS while
+our ZITS can achieve significant improvements based on
+LaMa due to the seamlessly embedded structural information and positional encoding. Note that the gap between
+ZITS++ and MST is also caused by the different quality of
+recovered structures as discussed below. For Places2, HiFill
+fails to get good results with large masks, which may be
+caused by its limited model capacity. Note that Co-Mod
+has a low FID and LPIPS on Places2. However, Co-Mod is
+trained with a sophisticated StyleGAN [50] with much more
+training data compared with others. And our ZITS can even
+achieve better results compared with Co-Mod with limited
+data scale and training steps. Moreover, ZITS++ improved
+in this paper can even outperform ZITS. In general, our
+method has superior performance compared with LaMa,
+which is valuable with limited finetune steps. And LaMa
+in Tab. 15 is trained with the same total steps as ZITS++.
+Comparison of P-IDS and U-IDS. Following [19], we also
+test the feature space separability of generated images with
+P-IDS and U-IDS in Tab. 3. To avoid the overfitting of SVM,
+we use the 768-d features from the pre-trained InceptionV3
+model instead of the 2048-d ones on the Indoor dataset with
+just 1,000 testing images. ZITS++ outperforms all competitors in Indoor. But Co-Mod and MAT achieve superior PIDS than our method in Places2. We think this phenomenon
+is reasonable, caused by different training formulations between Co-Mod [19] and LaMa [2]. Both Co-Mod and MAT
+enjoy the co-modulation training based on StyleGAN2 [50]
+with latent vectors, which employ little to no reconstruction
+loss (such as L1 and perceptual loss). Co-modulation based
+methods enjoy fewer blur and texture artifacts, but they
+often suffer from hallucinated generations and fail to result
+in faithful inpainted images. Contrarily, ZITS is based on the
+training strategy of LaMa, which has relatively high weights
+for reconstruction losses as in Sec. 3.5, and enjoys highfidelity generations as verified in qualitative comparisons
+(Sec. 4.4). Hence it is hard to judge whether the inpainting
+results are faithful through the feature separability in P-IDS
+and U-IDS. But we think our prior guidance is orthogonal
+to the co-modulation GAN training; unifying them could be
+seen as interesting future work.
+Quantitative Results of L-Edges and Lines. We show
+quantitative results of L-Edges and lines reconstructed on
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+11
+
+Table 5
+MPE ablation of ZITS and ZITS++ finetuned on 512×512 Places2.
+
+PSNR↑
+
+SSIM↑
+
+FID↓
+
+LPIPS↓
+
+ZITS
+
+with MPE
+w./o. MPE
+
+24.23
+24.20
+
+0.881
+0.880
+
+26.08
+26.29
+
+0.133
+0.135
+
+ZITS++
+
+with MPE
+w./o. MPE
+
+24.50
+24.45
+
+0.885
+0.884
+
+25.64
+25.95
+
+0.118
+0.119
+
+Table 6
+Ablation studies with different settings on Indoor. ‘NewPriors’ indicate
+L-Edge and gradient used in ZITS++ rather than the canny edge of
+ZITS, while ‘LKA’ means improved FTR as in Sec. 3.3.
+FTR SFE MPE ReZero GCs NewPriors LKA PSNR↑ SSIM↑ FID↓ LPIPS↓
+(a) Masked Input
+
+(b) EC
+
+(c) MST
+
+(d) LaMa
+
+(e) Ours
+
+Figure 12. Qualitative 256×256 results of Indoor dataset compared
+among EC [5], MST [6], LaMa [2], and our ZITS++ results.
+
+Indoor and Places2 in Tab. 4. Our TSR can get much better
+results on both Indoor and Places2 compared with MST [6].
+It demonstrates that the transformer-based TSR is amenable
+to learning holistic structures in a sparse tensor space, which
+can benefit the results of ZITS++ a lot as shown in Tab. 15.
+Moreover, the newly introduced priors could be well recovered by TSR without the Mask-Predict [82] trick used
+in ZITS. Since both L-Edges and lines are trained jointly
+in MST and TSR, line metrics may be different from ones
+produced with the canny edge in our previous work [1]. But
+the conclusion is consistent, i.e., the transformer-based TSR
+outperforms the CNN-based MST in the structure recovery.
+4.4
+
+Qualitative Comparisons
+
+Qualitative Inpainting Results. We show the qualitative
+inpainting results of Indoor in Fig. 12 and Places2 in Fig. 13.
+Compared with other methods, our ZITS++ can tackle more
+reasonable structures, especially our method can obtain
+clearer borderlines. Furthermore, ZITS++ achieves prominent improvements in the structure recovery compared
+with LaMa; and outperforms the state-of-the-art MAT [20]
+with much more faithful results. Note that both LaMa and
+ZITS++ are trained with the same steps.
+Qualitative Results of Edges and Lines. We compare the
+structure recovery results in Indoor of Fig. 14 between the
+proposed transformer-based TSR and CNN-based MST. TSR
+can achieve more reasonable and expressive results of LEdges, canny edges and lines. More qualitative structural
+results are shown in the supplementary.
+4.5
+
+Ablation Studies
+
+Quantitative ablation studies on Indoor are shown in Tab. 6.
+MPE and GCs can slightly improve the performance of
+FTR. Besides, if adding structural information from TSR
+without ZeroRA, the improvement is limited. So ZeroRA
+is useful for incremental learning with good convergence.
+Moreover, newly proposed priors, L-Edge and gradient, and
+the LKA enhanced FTR can further improve the inpainting
+performance as our full model.
+Effects of MPE. We further exploit the effects of MPE in
+HR inpainting. FTR is trained without MPE at first. Then
+we use the ZeroRA technique to finetune the model with
+
+"
+"
+"
+"
+"
+"
+"
+"
+
+"
+"
+"
+"
+"
+"
+
+"
+"
+"
+"
+"
+"
+
+"
+"
+"
+"
+"
+
+"
+"
+"
+"
+"
+
+"
+"
+
+"
+
+25.20
+25.31
+25.28
+25.46
+25.51
+25.57
+26.14
+26.15
+
+0.902 16.97
+0.903 16.44
+0.905 16.15
+0.906 16.22
+0.906 16.15
+0.907 15.93
+0.916 14.66
+0.917 14.61
+
+0.112
+0.110
+0.102
+0.107
+0.103
+0.098
+0.089
+0.090
+
+and without MPE of the same steps. Results in Tab. 5 show
+that the simple MPE-based finetuning effectively improves
+the 512-inpainting in FID. From Fig. 15, ZITS with MPE
+generates images with natural and smooth colors.
+Comparisons between Canny and CATS Edges. Since the
+edge prior is simultaneously utilized in our conference
+model ZITS [1] (canny) and the newly proposed ZITS++
+(CATS), we further compare their performance in Fig. 16
+and Fig. 17. From Fig. 16, CATS can achieve more reasonable structure recovery benefiting from the superior scene
+understanding from L-Edge. Moreover, CATS results pay
+more attention to valuable object boundaries rather than
+textural canny edges filtered by gradients. Such a decoupling benefits both TSR and FTR for their own functions
+as mentioned in Sec. 3.6.3. Besides, from the HR inpainting
+results of 1024×1024 shown in Fig. 17, our ZITS++ address
+a failed HR case in ZITS with a better generation of distant
+buildings. Therefore, the CATS enhanced ZITS++ enjoys
+superior performance for image inpainting.
+4.5.1 Prior Ablations
+Settings. To expose the effect of different priors for image
+inpainting, we finetune the whole Places2 pre-trained LaMa
+baseline with 50,000 steps in ZeroRA on the Places2 subset
+of 25,000 training and 500 validation images over 5 scenes.
+For each prior shown in Tab. 7, we train a TSR with the
+specific loss function mentioned in Sec. 3.6. For combined
+priors shown in Tab. 8, we train one TSR for priors of
+the same loss function, e.g., CATS and lines are restored
+with the same TSR optimized with BCE, and gradients are
+restored with another TSR optimized with regularized Lgrad
+in Eq.(11). Other implemented details follow Sec. 4.2. PSNR,
+SSIM [88], FID [89], and LPIPS [90] are utilized as metrics.
+Prior Comparisons. We show quantitative results compared
+with different priors in Tab. 7. And qualitative results are
+illustrated in Fig. 19. Note that the baseline model is also
+finetuned with the same steps on the subset. All priors can
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+12
+(B) Places2 (512x512)
+
+(A) Places2 (256x256)
+
+(a) Masked Input
+
+(b) EC
+
+(c) HiFill
+
+(d) MST
+
+(e) Co-Mod
+
+(f) LaMa
+
+(g) Ours
+
+(a) Masked Input
+
+(c) LaMa
+
+(b) MAT
+
+(d) Ours
+
+Figure 13. (A) Places2 256×256 results compared with EC [5], HiFill [18], MST [6], Co-Mod [19], LaMa [2], and our ZITS++. (B) Places2 512×512
+results compared with MAT [20], LaMa [2], and our ZITS++.
+
+(a) Masked input
+
+(b) Canny from MST
+
+(c) CATS from MST
+
+(d) Line from MST
+
+(e) Canny from ours
+
+(f) CATS from ours
+
+(g) Line from ours
+
+Figure 14. The recovery comparison of canny edges, L-Edges (CATS)
+and lines on Indoor dataset (256×256).
+
+(a) Masked image
+
+(a) Masked input
+
+(c) ZITS results (d) CATS from ZITS++ (e) ZITS++ results
+
+Figure 16. Qualitative comparisons between canny edges from ZITS and
+CATS edges from ZITS++ in Places2. Yellow edges indicate restored
+regions in (b)(d).
+
+(c) with MPE
+
+(b) w./o. MPE
+
+(b) Canny from ZITS
+
+Figure 15. Ablations of 512×512 Places2 with and without MPE.
+Table 7
+Quantitative ablations on 256×256 Places2 subset with different priors.
+‘Seg.’ indicate semantic segmentations. The baseline (first row) is also
+finetuned with the same steps on the subset. Canny+Line are priors
+used in our conference version [1]. SSU means whether this prior can
+be upsampled by SSU to HR.
+
+Priors
+
+SSU
+
+PSNR↑
+
+SSIM↑
+
+FID↓
+
+LPIPS↓
+
+–
+Canny
+Canny+Line
+HED
+CATS
+DexiNed
+Gradient
+HOG
+LR-RGB
+RTV
+Seg.
+
+–
+✓
+✓
+✓
+✓
+✓
+×
+×
+×
+×
+×
+
+25.09
+25.36
+25.35
+25.25
+25.44
+25.29
+25.80
+25.35
+25.21
+25.75
+25.32
+
+0.873
+0.879
+0.878
+0.877
+0.879
+0.878
+0.886
+0.878
+0.876
+0.881
+0.876
+
+23.62
+21.68
+21.56
+21.81
+21.50
+21.54
+20.98
+21.97
+22.08
+21.27
+21.09
+
+0.101
+0.097
+0.094
+0.097
+0.097
+0.097
+0.091
+0.097
+0.097
+0.093
+0.096
+
+Table 8
+Quantitative ablations on the Places2 subset of 256×256 and 512×512
+with different prior combinations. ‘Grad’ indicates the gradient prior.
+256×256
+
+Priors
+
+512×512
+
+CATS Line Grad PSNR↑ SSIM↑ FID↓ LPIPS↓ PSNR↑ SSIM↑ FID↓ LPIPS↓
+
+"
+"
+"
+
+"
+"
+
+"
+
+25.09 0.873 23.62 0.101
+25.28 0.877 21.50 0.097
+25.34 0.878 20.69 0.095
+25.77 0.887 20.46 0.092
+
+24.86 0.880 26.79 0.123
+25.09 0.887 24.27 0.203
+25.25 0.888 23.88 0.206
+25.37 0.891 23.24 0.200
+
+Table 9
+Quantitative ablations for different priors used in HR-Flickr
+(1024×1024) without training directly.
+
+Priors
+
+PSNR↑
+
+SSIM↑
+
+FID↓
+
+LPIPS↓
+
+CATS
+CATS+E-NMS
+Grad
+RTV
+
+29.03
+29.01
+29.11
+29.13
+
+0.925
+0.925
+0.925
+0.925
+
+14.88
+14.72
+14.97
+15.65
+
+0.066
+0.065
+0.067
+0.066
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+(a) Masked image
+
+(b) LaMa result
+
+13
+
+(c) Canny from ZITS
+
+(d) ZITS result
+
+(e) CATS from ZITS++
+
+(f) ZITS++ result
+
+Figure 17. ZITS++ with CATS can also achieve better performance compared with ZITS in 1k inpainting. Please zoom in for details.
+
+Masked HR image
+
+RTV inpainted result
+
+CATS inpainted result
+
+Masked HR image
+
+Grad inpainted result
+
+CATS inpainted result
+
+Figure 18. HR-Flickr inpainted results based on CATS, Grad, and RTV. For HR inpainting (1k), left: RTV suffers from color leakage; right: Grad
+suffers from serious color difference and inconsistent boundaries. Please zoom in for details.
+
+(a) Masked image (b) Canny+line
+/No prior
+
+(c) HED
+
+(d) CATS
+
+(e) DexiNed
+
+(f) Gradients
+
+(g) HOG
+
+(h) LR-RGB
+
+(i) RTV
+
+(j) Segmentation
+
+Figure 19. Qualitative results compared with all priors in this paper. For each group, the first row indicates masked images and restored priors, while
+the second one shows inpainted results with various priors.
+
+improve the performance based on the baseline1 . Both lines
+and edges after E-NMS can be upsampled by our SSU, while
+other priors suffer from artifacts in boundaries during the
+HR inpainting as in Tab. 9 and Fig. 18. HOG and LR-RGB
+have discouraged improvements in Tab. 7 without proper
+structures. Our conference version (Canny+Line) gets moderate performance compared with other priors, while LEdges (HED, CATS, DexiNed) achieve better results in FID.
+Furthermore, CATS enjoys the best performance among
+the three L-Edge priors. Moreover, semantic segmentation
+works well, but we have only reported the upper bound
+of semantic performance here due to the gap of segmentation results from corrupted images. Gradients also greatly
+facilitate the inpainting performance, especially in PSNR
+and SSIM. Though RTV is also competitive, it still enjoys
+less priority compared with L-Edges and gradients. Besides,
+1. Wireframe lines do not work as an independent prior for image
+inpainting in this paper. Because lines are more effective in man-made
+scenes, while some cases have no lines at all. The effectiveness of lines
+based on the canny edge has been demonstrated in MST [6].
+
+gradient and RTV fail to be generalized to HR with the SSU.
+Prior Combinations. We further try to compare prior combinations among CATS, gradient, and line in Tab. 8. Structural priors achieve prominent improvement to the baseline.
+Specifically, CATS and gradient can work compatibly and
+achieve superior results for all metrics. Besides, wireframe
+lines benefit both 256 × 256 and 512 × 512 inpainting with
+better FID and LPIPS. Note that the gradient can not be
+generalized to untrained scales. So we only use it for the
+256×256 inpainting.
+4.6
+
+Results of High-Resolution Inpainting
+
+We also compare the results of HiFill, Co-Mod, LaMa,
+MAT, our ZITS and ZITS++ in Places2(512) of Tab. 10.
+Besides, LaMa, ZITS, and ZITS++ are further compared in
+Indoor(512) and MatterPort3D(1k) in Tab. 10. Comparisons
+of HR-Flickr are shown in Tab. 11. ZITS and ZITS++ are
+firstly trained in 256×256 and then finetuned with dynamic
+resolutions from 256 to 512 with 150k steps. Models tested
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+14
+
+Table 10
+Quantitative results of 512×512 in Indoor and Places2, and
+1024×1024 MatterPort3D. The best results are in bold, while the
+second-best ones are underlined.
+
+PSNR↑ SSIM↑ FID↓ LPIPS↓
+Indoor(512)
+
+LaMa [2]
+ZITS [1]
+ZITS++
+
+24.42
+25.36
+25.68
+
+0.911 21.48
+0.919 18.76
+0.923 17.73
+
+0.143
+0.117
+0.110
+
+Places2(512)
+
+HiFill [18]
+MAT [20]
+Co-Mod [19]
+LaMa [2]
+ZITS [1]
+ZITS++
+
+20.10
+21.68
+22.00
+24.15
+24.23
+24.50
+
+0.764
+0.838
+0.843
+0.877
+0.881
+0.885
+
+65.47
+32.43
+30.04
+27.86
+26.08
+25.64
+
+0.291
+0.165
+0.166
+0.149
+0.133
+0.118
+
+MatterPort3D(1k)
+
+LaMa [2]
+ZITS [1]
+ZITS++
+
+26.40
+26.55
+27.49
+
+0.944 14.04
+0.946 12.34
+0.950 10.86
+
+0.133
+0.116
+0.111
+
+Table 12
+Quantitative results on FFHQ in 256×256. The best results are in bold.
+Co-Mod [19]
+LaMa [2]
+ZITS++
+
+PSNR↑
+25.25
+26.60
+27.56
+
+SSIM↑
+0.889
+0.903
+0.918
+
+FID↓
+5.85
+6.38
+5.50
+
+LPIPS↓
+0.085
+0.078
+0.069
+
+Table 11
+Quantitative results of HR-Flickr with thin, medium (Med), and thick
+types of masks defined in [91]. SD means inpainting results from
+StableDiffusion-0.8B [52], which fails to produce results that are larger
+than 1K due to the memory limitation (48GB). Best results are in bold.
+
+HR-Flickr(1K)
+
+HR-Flickr(2K) HR-Flickr(4K)
+
+Mask LaMa ZITS++ SD LaMa ZITS++ LaMa ZITS++
+Thin 28.71
+PSNR↑ Med 26.15
+Thick 24.26
+
+29.32 27.93 27.80
+26.60 24.76 25.01
+24.68 22.50 23.52
+
+28.40
+25.69
+23.76
+
+27.88
+24.92
+23.22
+
+28.66
+25.44
+23.37
+
+Thin 0.921
+SSIM↑ Med 0.904
+Thick 0.895
+
+0.927 0.918 0.918
+0.912 0.903 0.910
+0.903 0.883 0.898
+
+0.925
+0.921
+0.908
+
+0.925
+0.915
+0.907
+
+0.934
+0.927
+0.917
+
+Thin 15.02
+Med 31.93
+Thick 40.79
+
+13.54 24.72 19.26
+28.39 36.94 40.86
+37.95 44.45 47.84
+
+16.46
+35.91
+45.12
+
+29.05
+47.43
+51.59
+
+24.44
+45.59
+50.91
+
+Thin 0.068
+LPIPS↓ Med 0.109
+Thick 0.140
+
+0.063 0.082 0.085
+0.098 0.103 0.124
+0.130 0.139 0.153
+
+0.077
+0.114
+0.155
+
+0.098
+0.132
+0.154
+
+0.085
+0.131
+0.163
+
+FID↓
+
+in Indoor(512) and MatterPort3D(1k) are both trained in
+Indoor training set, while methods tested for HR-Flickr are
+trained on Places2. For Places2(512), we randomly select
+1,000 samples from 36,500 for the 512 testing. Our ZITS++
+can outperform LaMa and even previous ZITS, which illustrates the effectiveness of the CATS edges and the updated
+FTR. Besides, ZITS++ can also get better 1k results in MatterPort3D. More HR results can be seen in the supplementary.
+4.7
+
+Inpainting on Face Dataset
+
+We provide inpainting results compared on the face dataset
+FFHQ [43] in Fig. 20 and Tab. 12, which is split into
+68,000/2,000 images as training and test sets. Thanks to
+the effectiveness of CATS, our ZITS++ outperforms Co-Mod
+and LaMa without the line prior. As shown in Fig. 20, CATS
+L-Edges preserve structures of glasses, hats, and ears.
+4.8
+
+Model Parameters and Inference Speed
+
+We further compare the model parameters and inference
+speed in Tab. 13. All methods are validated with official
+codes, while we adjust the model designs of Co-Mod and
+
+(a) Masked image
+
+(b) Co-Mod
+
+(c) LaMa
+
+(d) CATS from ZITS++
+
+(e) ZITS++
+
+Figure 20. Qualitative inpainting results (256×256) on FFHQ.
+
+MAT to make them suitable for 256 resolution. Most methods listed in Tab. 13 could be seen as two-stage models. The
+first stages of EC, MST, ICT, ZITS, and ZITS++ are working
+for the prior reconstruction. Note that the transformer-based
+first stage of ICT is very time-consuming for generating lowresolution images autoregressively. MAT could also be considered as a two-stage model, which contains an additional
+Conv-U-Net in the second stage for refinement. Co-Mod is
+the fastest method in Tab. 13 due to its efficient CUDA implementation of [50]. Benefited by the informative L-Edges
+and the effective E-NMS technique, the TSR of ZITS++ gets
+rid of the costly Mask-Predict used in [1]. So ZITS++ is
+much faster than ZITS in stage 1 even with three priors
+(ZITS++∗ ). Moreover, thanks to the SSU (Sec. 3.2), our TSR
+can tackle the prior recovery in arbitrary resolutions with
+the same cost. Compared with other state-of-the-art twostage methods, the efficiency of ZITS++ is still competitive.
+
+Table 13
+Comparisons of model Parameters (Param.) and inference speed for
+different stages in 256 and 1024 resolutions respectively. ZITS++
+contains one TSR for lines and L-Edges, while ZITS++∗ is enhanced
+with one more TSR for gradients.
+
+Model
+EC [5]
+MST [6]
+Co-Mod [19]
+MAT [20]
+ICT [17]
+LaMa [2]
+ZITS [1]
+ZITS++
+ZITS++∗
+
+Param.
+22M
+26M
+80M
+62M
+122M
+27M
+68M
+83M
+101M
+
+Stage1/Stage2/All (ms/img)
+256x256
+
+1024x1024
+
+11.2/11.1/22.3
+16.9/13.6/30.5
+–/42.8/42.8
+121.0/34.9/155.9
+8287/8.00/8295
+–/34.3/34.3
+182.8/43.2/226.0
+44.4/47.4/91.8
+72.2/49.0/121.2
+
+149.1/149.3/298.4
+217.8/190.1/408.0
+–/60.4/60.4
+330.2/149.1/479.3
+OOM
+–/103.8/103.8
+182.9/232.8/415.7
+44.5/338.7/383.2
+–
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+15
+
+R EFERENCES
+[1]
+
+(a) Masked image
+
+(b) CATS from ZITS++
+
+(c) ZITS++
+
+Figure 21. Failure cases of our method. ZITS++ is trained on Places2.
+
+5
+
+L IMITATIONS AND FAILURE C ASES
+
+We summarize the limitation of our method in this section.
+As shown in the first row of Fig. 21, our method fails to recover complex man-made buildings under extremely large
+masks. Although ZITS++ can achieve good performance in
+object removal, it still suffers from some intractable cases,
+such as incomplete masks for human bodies in complicated
+environments as shown in the second row of Fig. 21. Though
+our TSR can successfully understand the body structure, our
+FTR cannot tackle it properly. We think that such failure
+is restricted by the limited model capacity. Combining our
+prior learning with models enjoying larger capacity, e.g.,
+diffusion models, is an interesting future work.
+
+6
+
+C ONCLUSIONS
+
+In this paper, we propose an incremental structure enhanced
+inpainting model called ZITS++. We use a transformerbased structure restorer to get much better holistic structures
+compared with previous methods. Then, a novel ZeroRA
+strategy is leveraged to incorporate auxiliary structures into
+a pre-trained inpainting model with a few finetuning steps.
+The proposed masking positional encoding can further improve the inpainting performance. Moreover, we further
+study different image priors for inpainting and select to
+leverage CATS edges [4] instead of canny [3] used in the
+conference version [1], which provides more informative
+structures to the inpainting model. Besides, we comprehensively upgraded LaMa [2] used as the pre-trained FTR with
+LKA and several useful techniques. The newly proposed
+ZITS++ can achieve significant improvements based on the
+state-of-the-art model in experiments of various resolutions,
+even outperforming our previous ZITS.
+
+7
+
+ACKNOWLEDGEMENT
+
+This work was supported in part by the National Natural
+Science Foundation of China Grants (62076067, 62176061),
+and STCSM Project (No.22511105000).
+
+Q. Dong, C. Cao, and Y. Fu, “Incremental transformer structure
+enhanced image inpainting with masking positional encoding,”
+arXiv preprint arXiv:2203.00867, 2022.
+[2] R. Suvorov, E. Logacheva, A. Mashikhin, A. Remizova,
+A. Ashukha, A. Silvestrov, N. Kong, H. Goka, K. Park, and V. Lempitsky, “Resolution-robust large mask inpainting with fourier convolutions,” arXiv preprint arXiv:2109.07161, 2021.
+[3] J. Canny, “A computational approach to edge detection,” IEEE
+Transactions on pattern analysis and machine intelligence, no. 6, pp.
+679–698, 1986.
+[4] L. Huan, N. Xue, X. Zheng, W. He, J. Gong, and G.-S. Xia,
+“Unmixing convolutional features for crisp edge detection,” IEEE
+Transactions on Pattern Analysis and Machine Intelligence, 2021.
+[5] K. Nazeri, E. Ng, T. Joseph, F. Qureshi, and M. Ebrahimi, “Edgeconnect: Structure guided image inpainting using edge prediction,” in Proceedings of the IEEE/CVF International Conference on
+Computer Vision Workshops, 2019.
+[6] C. Cao and Y. Fu, “Learning a sketch tensor space for image
+inpainting of man-made scenes,” ICCV, 2021.
+[7] X. Guo, H. Yang, and D. Huang, “Image inpainting via conditional texture and structure dual generation,” in Proceedings of
+the IEEE/CVF International Conference on Computer Vision, 2021, pp.
+14 134–14 143.
+[8] O. Elharrouss, N. Almaadeed, S. Al-Maadeed, and Y. Akbari,
+“Image inpainting: A review,” Neural Processing Letters, vol. 51,
+no. 2, pp. 2007–2028, 2020.
+[9] Y. Jo and J. Park, “Sc-fegan: Face editing generative adversarial network with user’s sketch and color,” in Proceedings of the
+IEEE/CVF International Conference on Computer Vision, 2019, pp.
+1745–1753.
+[10] M. Bertalmío, G. Sapiro, V. Caselles, and C. Ballester, “Image
+inpainting,” Proceedings of the 27th annual conference on Computer
+graphics and interactive techniques, 2000.
+[11] A. Levin, A. Zomet, and Y. Weiss, “Learning how to inpaint
+from global image statistics,” Proceedings Ninth IEEE International
+Conference on Computer Vision, pp. 305–312 vol.1, 2003.
+[12] S. Roth and M. J. Black, “Fields of experts: a framework for
+learning image priors,” 2005 IEEE Computer Society Conference on
+Computer Vision and Pattern Recognition (CVPR’05), vol. 2, pp. 860–
+867 vol. 2, 2005.
+[13] J. Hays and A. A. Efros, “Scene completion using millions of
+photographs,” ACM Transactions on Graphics (SIGGRAPH 2007),
+vol. 26, no. 3, 2007.
+[14] A. Criminisi, P. Perez, and K. Toyama, “Object removal by
+exemplar-based inpainting,” in 2003 IEEE Computer Society Conference on Computer Vision and Pattern Recognition, 2003. Proceedings.,
+vol. 2. IEEE, 2003, pp. II–II.
+[15] A. Krizhevsky, I. Sutskever, and G. E. Hinton, “Imagenet classification with deep convolutional neural networks,” Advances in neural
+information processing systems, vol. 25, pp. 1097–1105, 2012.
+[16] I. Goodfellow, J. Pouget-Abadie, M. Mirza, B. Xu, D. Warde-Farley,
+S. Ozair, A. Courville, and Y. Bengio, “Generative adversarial
+nets,” Advances in neural information processing systems, vol. 27,
+2014.
+[17] Z. Wan, J. Zhang, D. Chen, and J. Liao, “High-fidelity pluralistic image completion with transformers,” in Proceedings of the
+IEEE/CVF International Conference on Computer Vision, 2021, pp.
+4692–4701.
+[18] Z. Yi, Q. Tang, S. Azizi, D. Jang, and Z. Xu, “Contextual residual
+aggregation for ultra high-resolution image inpainting,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition, 2020, pp. 7508–7517.
+[19] S. Zhao, J. Cui, Y. Sheng, Y. Dong, X. Liang, E. I. Chang, and
+Y. Xu, “Large scale image completion via co-modulated generative
+adversarial networks,” arXiv preprint arXiv:2103.10428, 2021.
+[20] W. Li, Z. Lin, K. Zhou, L. Qi, Y. Wang, and J. Jia, “Mat: Mask-aware
+transformer for large hole image inpainting,” in Proceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern Recognition,
+2022, pp. 10 758–10 768.
+[21] J. Yu, Z. Lin, J. Yang, X. Shen, X. Lu, and T. S. Huang, “Generative
+image inpainting with contextual attention,” in Proceedings of the
+IEEE conference on computer vision and pattern recognition, 2018, pp.
+5505–5514.
+[22] Y. Zeng, Z. Lin, J. Yang, J. Zhang, E. Shechtman, and H. Lu, “Highresolution image inpainting with iterative confidence feedback
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+and guided upsampling,” in European Conference on Computer
+Vision. Springer, 2020, pp. 1–17.
+[23] Y. Yu, F. Zhan, R. Wu, J. Pan, K. Cui, S. Lu, F. Ma, X. Xie, and
+C. Miao, “Diverse image inpainting with bidirectional and autoregressive transformers,” arXiv preprint arXiv:2104.12335, 2021.
+[24] L. Liao, J. Xiao, Z. Wang, C.-W. Lin, and S. Satoh, “Guidance and
+evaluation: Semantic-aware image inpainting for mixed scenes,”
+in Computer Vision–ECCV 2020: 16th European Conference, Glasgow,
+UK, August 23–28, 2020, Proceedings, Part XXVII 16. Springer,
+2020, pp. 683–700.
+[25] Y. Song, C. Yang, Y. Shen, P. Wang, Q. Huang, and C.-C. J.
+Kuo, “Spg-net: Segmentation prediction and guidance network for
+image inpainting,” arXiv preprint arXiv:1805.03356, 2018.
+[26] Y. Ren, X. Yu, R. Zhang, T. H. Li, S. Liu, and G. Li, “Structureflow: Image inpainting via structure-aware appearance flow,” in
+Proceedings of the IEEE/CVF International Conference on Computer
+Vision, 2019, pp. 181–190.
+[27] H. Liu, B. Jiang, Y. Song, W. Huang, and C. Yang, “Rethinking image inpainting via a mutual encoder-decoder with feature equalizations,” in European Conference on Computer Vision. Springer,
+2020, pp. 725–741.
+[28] S. Xu, D. Liu, and Z. Xiong, “E2i: Generative inpainting from
+edge to image,” IEEE Transactions on Circuits and Systems for Video
+Technology, vol. 31, no. 4, pp. 1308–1322, 2020.
+[29] J. Yang, Z. Qi, and Y. Shi, “Learning to incorporate structure
+knowledge for image inpainting,” in Proceedings of the AAAI
+Conference on Artificial Intelligence, vol. 34, no. 07, 2020, pp. 12 605–
+12 612.
+[30] W. Zhang, J. Zhu, Y. Tai, Y. Wang, W. Chu, B. Ni, C. Wang, and
+X. Yang, “Context-aware image inpainting with learned semantic
+priors,” in Proceedings of the Thirtieth International Joint Conference
+on Artificial Intelligence, IJCAI-21, Z.-H. Zhou, Ed. International
+Joint Conferences on Artificial Intelligence Organization, 8 2021,
+pp. 1323–1329, main Track.
+[31] K. Huang, Y. Wang, Z. Zhou, T. Ding, S. Gao, and Y. Ma, “Learning
+to parse wireframes in images of man-made environments,” in
+Proceedings of the IEEE Conference on Computer Vision and Pattern
+Recognition, 2018, pp. 626–635.
+[32] M. A. Islam, S. Jia, and N. D. Bruce, “How much position information do convolutional neural networks encode?” arXiv preprint
+arXiv:2001.08248, 2020.
+[33] R. Xu, X. Wang, K. Chen, B. Zhou, and C. C. Loy, “Positional
+encoding as spatial inductive bias in gans,” 2020.
+[34] C. H. Lin, H.-Y. Lee, Y.-C. Cheng, S. Tulyakov, and M.-H. Yang,
+“Infinitygan: Towards infinite-pixel image synthesis,” 2021.
+[35] T. Bachlechner, B. P. Majumder, H. Mao, G. Cottrell, and
+J. McAuley, “Rezero is all you need: Fast convergence at large
+depth,” in Uncertainty in Artificial Intelligence. PMLR, 2021, pp.
+1352–1361.
+[36] M.-H. Guo, C.-Z. Lu, Z.-N. Liu, M.-M. Cheng, and S.-M. Hu,
+“Visual attention network,” arXiv preprint arXiv:2202.09741, 2022.
+[37] S. Xie and Z. Tu, “Holistically-nested edge detection,” in Proceedings of the IEEE international conference on computer vision, 2015, pp.
+1395–1403.
+[38] L. Xu, Q. Yan, Y. Xia, and J. Jia, “Structure extraction from texture
+via relative total variation,” ACM transactions on graphics (TOG),
+vol. 31, no. 6, pp. 1–10, 2012.
+[39] N. Dalal and B. Triggs, “Histograms of oriented gradients for
+human detection,” in 2005 IEEE computer society conference on
+computer vision and pattern recognition (CVPR’05), vol. 1. Ieee,
+2005, pp. 886–893.
+[40] B. Zhou, A. Lapedriza, A. Khosla, A. Oliva, and A. Torralba,
+“Places: A 10 million image database for scene recognition,” IEEE
+transactions on pattern analysis and machine intelligence, vol. 40, no. 6,
+pp. 1452–1464, 2017.
+[41] P. K. Nathan Silberman, Derek Hoiem and R. Fergus, “Indoor
+segmentation and support inference from rgbd images,” in ECCV,
+2012.
+[42] A. Chang, A. Dai, T. Funkhouser, M. Halber, M. Niessner,
+M. Savva, S. Song, A. Zeng, and Y. Zhang, “Matterport3d: Learning from rgb-d data in indoor environments,” arXiv preprint
+arXiv:1709.06158, 2017.
+[43] T. Karras, S. Laine, and T. Aila, “A style-based generator architecture for generative adversarial networks,” in Proceedings of the
+IEEE/CVF conference on computer vision and pattern recognition, 2019,
+pp. 4401–4410.
+
+16
+
+[44] H. Li, W. Luo, and J. Huang, “Localization of diffusion-based
+inpainting in digital images,” IEEE transactions on information
+forensics and security, vol. 12, no. 12, pp. 3050–3064, 2017.
+[45] T. Ruzic and A. Pizurica, “Context-aware patch-based image inpainting using markov random field modeling,” IEEE transactions
+on image processing, vol. 24, no. 1, pp. 444–456, 2015.
+[46] D. Pathak, P. Krahenbuhl, J. Donahue, T. Darrell, and A. A. Efros,
+“Context encoders: Feature learning by inpainting,” in Proceedings
+of the IEEE conference on computer vision and pattern recognition, 2016,
+pp. 2536–2544.
+[47] G. Liu, F. A. Reda, K. J. Shih, T.-C. Wang, A. Tao, and B. Catanzaro,
+“Image inpainting for irregular holes using partial convolutions,”
+in Proceedings of the European Conference on Computer Vision (ECCV),
+2018, pp. 85–100.
+[48] J. Yu, Z. Lin, J. Yang, X. Shen, X. Lu, and T. S. Huang, “Freeform image inpainting with gated convolution,” in Proceedings of
+the IEEE/CVF International Conference on Computer Vision, 2019, pp.
+4471–4480.
+[49] Y. Zeng, J. Fu, H. Chao, and B. Guo, “Aggregated contextual
+transformations for high-resolution image inpainting,” IEEE Transactions on Visualization and Computer Graphics, 2022.
+[50] T. Karras, S. Laine, M. Aittala, J. Hellsten, J. Lehtinen, and T. Aila,
+“Analyzing and improving the image quality of stylegan,” in
+Proceedings of the IEEE/CVF Conference on Computer Vision and
+Pattern Recognition, 2020, pp. 8110–8119.
+[51] P. Dhariwal and A. Nichol, “Diffusion models beat gans on image synthesis,” Advances in Neural Information Processing Systems,
+vol. 34, pp. 8780–8794, 2021.
+[52] R. Rombach, A. Blattmann, D. Lorenz, P. Esser, and B. Ommer,
+“High-resolution image synthesis with latent diffusion models,”
+in Proceedings of the IEEE/CVF Conference on Computer Vision and
+Pattern Recognition, 2022, pp. 10 684–10 695.
+[53] C. Saharia, W. Chan, H. Chang, C. Lee, J. Ho, T. Salimans, D. Fleet,
+and M. Norouzi, “Palette: Image-to-image diffusion models,” in
+ACM SIGGRAPH 2022 Conference Proceedings, 2022, pp. 1–10.
+[54] A. Nichol, P. Dhariwal, A. Ramesh, P. Shyam, P. Mishkin, B. McGrew, I. Sutskever, and M. Chen, “Glide: Towards photorealistic
+image generation and editing with text-guided diffusion models,”
+arXiv preprint arXiv:2112.10741, 2021.
+[55] A. Lugmayr, M. Danelljan, A. Romero, F. Yu, R. Timofte, and
+L. Van Gool, “Repaint: Inpainting using denoising diffusion probabilistic models,” in Proceedings of the IEEE/CVF Conference on
+Computer Vision and Pattern Recognition, 2022, pp. 11 461–11 471.
+[56] H. Chung, B. Sim, and J. C. Ye, “Come-closer-diffuse-faster: Accelerating conditional diffusion models for inverse problems through
+stochastic contraction,” in Proceedings of the IEEE/CVF Conference on
+Computer Vision and Pattern Recognition, 2022, pp. 12 413–12 422.
+[57] H. Chung, B. Sim, D. Ryu, and J. C. Ye, “Improving diffusion
+models for inverse problems using manifold constraints,” arXiv
+preprint arXiv:2206.00941, 2022.
+[58] C. Gao, A. Saraf, J.-B. Huang, and J. Kopf, “Flow-edge guided
+video completion,” in Computer Vision–ECCV 2020: 16th European
+Conference, Glasgow, UK, August 23–28, 2020, Proceedings, Part XII
+16. Springer, 2020, pp. 713–729.
+[59] Z. Li, C.-Z. Lu, J. Qin, C.-L. Guo, and M.-M. Cheng, “Towards
+an end-to-end framework for flow-guided video inpainting,” in
+Proceedings of the IEEE/CVF Conference on Computer Vision and
+Pattern Recognition, 2022, pp. 17 562–17 571.
+[60] K. Zhang, J. Fu, and D. Liu, “Flow-guided transformer for video
+inpainting,” in Computer Vision–ECCV 2022: 17th European Conference, Tel Aviv, Israel, October 23–27, 2022, Proceedings, Part XVIII.
+Springer, 2022, pp. 74–90.
+[61] M. Chen, A. Radford, R. Child, J. Wu, H. Jun, D. Luan, and
+I. Sutskever, “Generative pretraining from pixels,” in International
+Conference on Machine Learning. PMLR, 2020, pp. 1691–1703.
+[62] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N.
+Gomez, Ł. Kaiser, and I. Polosukhin, “Attention is all you need,”
+in Advances in neural information processing systems, 2017, pp. 5998–
+6008.
+[63] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai,
+T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly
+et al., “An image is worth 16x16 words: Transformers for image
+recognition at scale,” arXiv preprint arXiv:2010.11929, 2020.
+[64] P. Esser, R. Rombach, and B. Ommer, “Taming transformers for
+high-resolution image synthesis,” in Proceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition, 2021, pp.
+12 873–12 883.
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+[65] A. Ramesh, M. Pavlov, G. Goh, S. Gray, C. Voss, A. Radford,
+M. Chen, and I. Sutskever, “Zero-shot text-to-image generation,”
+2021.
+[66] K. He, X. Chen, S. Xie, Y. Li, P. Dollár, and R. Girshick, “Masked
+autoencoders are scalable vision learners,” in Proceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern Recognition,
+2022, pp. 16 000–16 009.
+[67] L. Chi, B. Jiang, and Y. Mu, “Fast fourier convolution,” Advances
+in Neural Information Processing Systems, vol. 33, 2020.
+[68] X. Ding, X. Zhang, J. Han, and G. Ding, “Scaling up your kernels
+to 31x31: Revisiting large kernel design in cnns,” in Proceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern Recognition,
+2022, pp. 11 963–11 975.
+[69] S. Liu, T. Chen, X. Chen, X. Chen, Q. Xiao, B. Wu, M. Pechenizkiy, D. Mocanu, and Z. Wang, “More convnets in the 2020s:
+Scaling up kernels beyond 51x51 using sparsity,” arXiv preprint
+arXiv:2207.03620, 2022.
+[70] T. Xiao, P. Dollar, M. Singh, E. Mintun, T. Darrell, and R. Girshick,
+“Early convolutions help transformers see better,” Advances in
+Neural Information Processing Systems, vol. 34, 2021.
+[71] J. Ho, N. Kalchbrenner, D. Weissenborn, and T. Salimans, “Axial attention in multidimensional transformers,” arXiv preprint
+arXiv:1912.12180, 2019.
+[72] Z. Huang, X. Wang, L. Huang, C. Huang, Y. Wei, and W. Liu,
+“Ccnet: Criss-cross attention for semantic segmentation,” in Proceedings of the IEEE/CVF international conference on computer vision,
+2019, pp. 603–612.
+[73] C. Raffel, N. Shazeer, A. Roberts, K. Lee, S. Narang, M. Matena,
+Y. Zhou, W. Li, and P. J. Liu, “Exploring the limits of transfer
+learning with a unified text-to-text transformer,” arXiv preprint
+arXiv:1910.10683, 2019.
+[74] R. Xiong, Y. Yang, D. He, K. Zheng, S. Zheng, C. Xing, H. Zhang,
+Y. Lan, L. Wang, and T. Liu, “On layer normalization in the
+transformer architecture,” in International Conference on Machine
+Learning. PMLR, 2020, pp. 10 524–10 533.
+[75] N. Xue, T. Wu, S. Bai, F. Wang, G.-S. Xia, L. Zhang, and P. H.
+Torr, “Holistically-attracted wireframe parsing,” in Proceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern Recognition,
+2020, pp. 2788–2797.
+[76] C. L. Zitnick and P. Dollár, “Edge boxes: Locating object proposals
+from edges,” in ECCV, 2014.
+[77] P. Isola, J.-Y. Zhu, T. Zhou, and A. A. Efros, “Image-to-image
+translation with conditional adversarial networks,” in Proceedings
+of the IEEE conference on computer vision and pattern recognition, 2017,
+pp. 1125–1134.
+[78] P. Ramachandran, B. Zoph, and Q. V. Le, “Searching for activation
+functions,” arXiv preprint arXiv:1710.05941, 2017.
+[79] F. Yu and V. Koltun, “Multi-scale context aggregation by dilated
+convolutions,” arXiv preprint arXiv:1511.07122, 2015.
+[80] I. Gulrajani, F. Ahmed, M. Arjovsky, V. Dumoulin, and
+A. Courville, “Improved training of wasserstein gans,” arXiv
+preprint arXiv:1704.00028, 2017.
+[81] T.-C. Wang, M.-Y. Liu, J.-Y. Zhu, A. Tao, J. Kautz, and B. Catanzaro, “High-resolution image synthesis and semantic manipulation with conditional gans,” in Proceedings of the IEEE conference on
+computer vision and pattern recognition, 2018, pp. 8798–8807.
+[82] M. Ghazvininejad, O. Levy, Y. Liu, and L. Zettlemoyer, “Maskpredict: Parallel decoding of conditional masked language models,” arXiv preprint arXiv:1904.09324, 2019.
+[83] Y. Zhou, H. Qi, and Y. Ma, “End-to-end wireframe parsing,” in
+Proceedings of the IEEE/CVF International Conference on Computer
+Vision, 2019, pp. 962–971.
+[84] X. S. Poma, A. Sappa, P. Humanante, and A. Arbarinia, “Dense
+extreme inception network for edge detection,” arXiv preprint
+arXiv:2112.02250, 2021.
+[85] B. Zhou, H. Zhao, X. Puig, S. Fidler, A. Barriuso, and A. Torralba,
+“Semantic understanding of scenes through the ADE20K dataset,”
+CoRR, vol. abs/1608.05442, 2016.
+[86] S. Zheng, J. Lu, H. Zhao, X. Zhu, Z. Luo, Y. Wang, Y. Fu, J. Feng,
+T. Xiang, P. H. Torr et al., “Rethinking semantic segmentation
+from a sequence-to-sequence perspective with transformers,” in
+Proceedings of the IEEE/CVF conference on computer vision and pattern
+recognition, 2021, pp. 6881–6890.
+[87] B. Lim, S. Son, H. Kim, S. Nah, and K. M. Lee, “Enhanced
+deep residual networks for single image super-resolution,” in The
+IEEE Conference on Computer Vision and Pattern Recognition (CVPR)
+Workshops, July 2017.
+
+17
+
+[88] Z. Wang, A. C. Bovik, H. R. Sheikh, and E. P. Simoncelli, “Image
+quality assessment: from error visibility to structural similarity,”
+IEEE transactions on image processing, vol. 13, no. 4, pp. 600–612,
+2004.
+[89] M. Heusel, H. Ramsauer, T. Unterthiner, B. Nessler, and S. Hochreiter, “Gans trained by a two time-scale update rule converge to a
+local nash equilibrium,” 2018.
+[90] R. Zhang, P. Isola, A. A. Efros, E. Shechtman, and O. Wang,
+“The unreasonable effectiveness of deep features as a perceptual
+metric,” in Proceedings of the IEEE conference on computer vision and
+pattern recognition, 2018, pp. 586–595.
+[91] P. Kulshreshtha, B. Pugh, and S. Jiddi, “Feature refinement
+to improve high resolution image inpainting,” arXiv preprint
+arXiv:2206.13644, 2022.
+[92] C. Wei, H. Fan, S. Xie, C.-Y. Wu, A. Yuille, and C. Feichtenhofer, “Masked feature prediction for self-supervised visual pretraining,” arXiv preprint arXiv:2112.09133, 2021.
+[93] D. Marr, Vision: A computational investigation into the human representation and processing of visual information. MIT press, 2010.
+[94] K. A. Stevens, “The vision of david marr,” Perception, vol. 41, no. 9,
+pp. 1061–1072, 2012.
+[95] A. Abid, A. Abdalla, A. Abid, D. Khan, A. Alfozan, and J. Zou,
+“Gradio: Hassle-free sharing and testing of ml models in the wild,”
+arXiv preprint arXiv:1906.02569, 2019.
+[96] M. Cimpoi, S. Maji, I. Kokkinos, S. Mohamed, and A. Vedaldi, “Describing textures in the wild,” in Proceedings of the IEEE conference
+on computer vision and pattern recognition, 2014, pp. 3606–3613.
+
+Chenjie Cao received the M.S. degree in Computer Science from East China University of Science and Technology, in 2019. He is currently
+pursuing a Ph.D. degree in Statistics from Fudan University. His research interests include
+machine learning, deep learning, image inpainting, image editing, 3D shape reconstruction, and
+multi-view stereo.
+
+Qiaole Dong received the B.S. degree in data
+science from Fudan University, China, in 2022.
+He is currently pursuing a Ph.D. degree in Statistics from Fudan University with supervisor Dr.
+Yanwei Fu. His research interests include machine learning, deep learning, image inpainting,
+image editing, and optical flow estimation.
+
+Yanwei Fu received the MEng degree from the
+Department of Computer Science and Technology, Nanjing University, China, in 2011, and the
+PhD degree from the Queen Mary University of
+London, in 2014. He held a post-doctoral position at Disney Research, Pittsburgh, PA, from
+2015 to 2016. He is currently a tenure-track professor at Fudan University. He was appointed
+as the Professor of Special Appointment (Eastern Scholar) at Shanghai Institutions of Higher
+Learning. His work has led to many awards,
+including the IEEE ICME 2019 best paper. He published more than
+100 journal/conference papers including IEEE TPAMI, TMM, ECCV, and
+CVPR. His research interests are one-shot learning, and learning-based
+3D reconstruction.
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+A PPENDIX
+8
+
+B ROADER I MPACTS
+
+All generated results of both the main paper and the supplementary are based on learned statistics of the training
+dataset. Therefore, the results only reflect biases in those
+data without our subjective opinion. This work is only researched for the algorithmic discussion, and related societal
+impacts should not be ignored by users.
+
+9
+
+I NTRODUCTION OF OTHER P RIORS
+
+HOG [39] is a feature descriptor of gradient orientation
+distributions within local patches. MaskFeat [92] finds that
+HOG-based self-supervised pre-training video model can
+achieve very good performance in ImageNet. Therefore,
+HOG has been studied as a prior to inpainting. As to [92],
+we utilize a vanilla ViT [63] to inpaint HOG with masked
+inputs in RGB channels. Each cell comprises 8 × 8 pixels
+with 9 orientations. Thus a 256 × 256 image results in
+P̂h ∈ R32×32×27 HOG features. L2 loss is used to minimize
+the distance between the predicted HOG features P̃h and
+the original ones P̂h .
+Low-Resolution RGB Pixels (LR-RGB). RGB pixels are the
+most intuitive priors for inpainting. To address quadratically costly computation of transformer, ICT [17] leverages
+LR-RGB priors P̃rgb (32 × 32 in our implementation) to
+guide the inpainting. To further reduce the color space, all
+RGB combinations are clustered to 512 discrete K-Means
+centers on the whole ImageNet as [61]. Moreover, masked
+pixels are replaced with trainable tokens [MASK]. Then
+generated P̃rgb are bilinear upsampled to the stage-2 model.
+Thus stage-2 can be also seen as a super-resolution task,
+while stage-1 is working as LR inpainting. Since the color
+space is clustered to 512 discrete centers, the optimization
+can be seen as a classification. Therefore, the objective of
+P̃rgb is to minimize the negative log-likelihood with crossentropy (CE) for masked tokens.
+
+10
+
+D EATILS OF E-NMS F USION
+
+Since the original CATS edge can be seen as a continuous
+probability image, which is blurred near the boundary;
+and the bilinear upsampling will further aggravate the
+blur, which eventually degrades the performance of image
+inpainting, as shown in Fig. 22(b)(e). So we use E-NMS
+to work as a non-maximum suppression of the edge to
+preserve the sharp edge as in Fig. 22(c). On the other hand,
+we find that E-NMS loses a lot of low-probability regions,
+which may contain informative clues for inpainting models.
+Therefore, we decide to make a trade-off between the continuous CATS and the E-NMS CATS. We keep areas as the
+original CATS with probability less than 0.25, while areas
+with probability larger than 0.25 are replaced with CATS
+after E-NMS. The fused edge map and the related inpainting
+result is shown in Fig. 22(d) and Fig. 22(f) respectively.
+
+11
+
+D ETAILED N ETWORK S ETTINGS
+
+We show some detailed network settings in Tab. 14. Besides,
+transformer block, Fast Fourier Convolution (FFC) block [2],
+and the LKA inpainting block have been introduced in the
+
+18
+
+main paper. The dilated resnet block is from the middle
+layer of [5] with dilate=2.
+
+12
+
+K ANIZSA T RIANGLE I NPAINTING
+
+We also conduct an interesting experiment on completing
+Kanizsa Triangle, which is utilized as the teaser figure of
+David Marr’s book [93]. As contours in an outline drawing
+can convey meaning and play a crucial role in human
+vision, understanding and inpainting ideographic images
+are systematically tied to people’s visual perception and
+cognitive processes. For instance, in Fig. 23(a), we can observe partially occluded disks and another triangle under
+a nonexistent white triangle in the Kanizsa triangle [94].
+Benefited from transformer’s better understand of global
+structure than CNN [17], ZITS [1] and ZITS++ can inpaint
+more complete structure than CNN-based EC [5] as in the
+first row of Fig. 23. The final inpainting results of our
+ZITS++ exchange the top/down positions of the black-sided
+triangle and the nonexistent white one in the Kanizsa triangle. It is worth noting that ZITS achieves a good inpainting
+result thanks to the completely inpainted lines rather than
+canny edges, while ZITS++ can address it with only L-Edges
+(CATS).
+
+13
+
+M ORE T RAINING D ETAILS
+
+Training a model with dynamic resolutions of 256∼512 reduces the training speed with frequent GPU memory swaps.
+Therefore, we train the model with regular resolutions, i.e.,
+resizing images from 512 to 256 and then back to 512. For
+Indoor, there is one cycle for each epoch. For Places2, there
+are 64 cycles for each epoch. Such a local monotonic resizing
+makes the training smooth without missing diversity. And
+the dynamic resolution based training can effectively save
+the training cost compared with the training with a full 512
+image size. Moreover, it benefits to learn relative position
+encoding for our proposed MPE as discussed in [33].
+Our TSR can be trained in batch size 30 with 3
+NVIDIA(R) Tesla(R) V100 16GB GPUs. 256×256 based FTR
+and SFE can be trained in batch size 30 with 3 V100 GPUs.
+For the dynamic resolution based training, we use batch
+size 18 with 6 V100 GPUs. The ZeroRA based finetuning
+cost only about half a day and one day for 256×256 and
+256∼512 resolutions respectively.
+
+14
+
+U PSAMPLING I TERATIVELY WITH SSU
+
+Our Simple Structure Upsampler (SSU) introduced in Sec
+3.2 can also work iteratively for larger image sizes. First,
+we should process the output edges I′e and lines I′l of SSU
+through shifted sigmoid as
+
+I′e = sigmoid[γ(I′e + β)],
+I′l = sigmoid[γ(I′l + β)],
+
+(12)
+
+where γ = 2, β = 2 in our evaluation, and γ, β are randomly
+selected from [1.5, 3] for the finetuning. Since the output size
+of SSU is doubled, we can repeat the inputs Ie , Il ∈ Rh×w
+q
+q
+for q times to achieve I′e , I′l ∈ R2 h×2 w . Then, the outputs
+can further be resized with the bilinear interpolation for the
+target size. In general, our SSU can get good and robust
+upsampled results for large sizes as shown in Fig. 24.
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+(a) Masked image
+
+(b) CATS
+
+(c) CATS after E-NMS
+
+19
+
+(d) Fused CATS
+
+(e) Inpainted results by CATS
+
+(f) Inpainted results by fused CATS
+
+Figure 22. The example of E-NMS fusion and corresponding inpainted results. Please zoom-in for details.
+Table 14
+Model settings of Transformer Structure Restoration (TSR), Structure Feature Encoder (SFE), and Fourier CNN Texture Restoration (FTR). GC,
+BN mean Gated Convolution [48] and BatchNorm; TConv2d, TGC indicate Transposed Conv2d and GC.
+
+Transformer Structure Restoration (TSR)
+Conv2d+ReLU(256 × 256 × 64)
+Conv2d+ReLU(128 × 128 × 128)
+Conv2d+ReLU(64 × 64 × 256)
+Conv2d+ReLU(32 × 32 × 256)
+TransformerBlock×8
+TConv2d+ReLU(64 × 64 × 256)
+TConv2d+ReLU(128 × 128 × 128)
+TConv2d+ReLU(256 × 256 × 64)
+Conv2d+Sigmoid(256 × 256 × 2)
+
+Structure Feature Encoder (SFE)
+GC+BN+ReLU(256 × 256 × 64)
+GC+BN+ReLU(128 × 128 × 128)
+GC+BN+ReLU(64 × 64 × 256)
+GC+BN+ReLU(32 × 32 × 512)
+DilatedResnetBlock×3
+TGC+BN+ReLU(64 × 64 × 256)
+TGC+BN+ReLU(128 × 128 × 128)
+TGC+BN+ReLU(256 × 256 × 64)
+–
+
+15.3
+
+(a) Masked image
+
+(b) EC
+
+(c) ZITS
+
+(d) ZITS++
+
+Figure 23. Inpainted Kanizsa Triangle. First row is the inpainted canny
+edges (EC [5] and ZITS [1]) and CATS (ZITS++).
+
+15
+
+S UPPLEMENTARY E XPERIMENTS
+
+In this section, we provide some more qualitative and quantitative results to show the effects of our components.
+
+15.1
+
+More Structural Experiments
+
+TSR Ablations. For the Indoor dataset, we conducted
+several ablation experiments on our Transformer Structure
+Restoration (TSR), and the results are displayed in Tab. 16
+and Tab. 17. As illustrated in Tab. 16 and the first two rows
+of Tab. 17, replacing one standard self-attention module [62]
+with an axial attention module [71] in our Transformer
+Block can greatly reduce the GPU memory usage and speed
+up the model inference while keeping all metrics basically
+unchanged. Furthermore, we add the relative position encoding (RPE) [73] into our axial attention module, which can
+boost our results. Note that the RPE must be incorporated
+with the axial attention module in row-wise and columnwise, while standard attention based RPE costs much more
+GPU memory due to the long sequence. On the other hand,
+as we think that a higher recall will benefit the later image
+inpainting, we further multiply the line logits by 4 before
+feeding it through the sigmoid activation function in all
+the experiments. This strategy enhances recall while only
+compromising a little precision.
+
+More Qualitative Results
+
+More qualitative 256×256 results of Indoor, Places2, and
+FFHQ are shown in Fig. 25, Fig. 26, and Fig. 27. Qualitative
+512×512 Places2 results are shown in Fig. 28. Note that our
+method not only achieves better results in many man-made
+scenes, but also gets competitive results in natural scenes
+and face images benefited from MPE and edges.
+
+15.2
+
+Fourier CNN Texture Restoration with LKA (FTR)
+Conv2d+LKA+FFN(256 × 256 × 64)
+Conv2d+LKA+FFN(128 × 128 × 128)
+Conv2d+LKA+FFN(64 × 64 × 256)
+Conv2d+LKA+FFN(32 × 32 × 512)
+FFCBlock×9
+TConv2d+LKA+FFN(64 × 64 × 256)
+TConv2d+LKA+FFN(128 × 128 × 128)
+TConv2d+LKA+FFN(256 × 256 × 64)
+Conv2d+Tanh(256 × 256 × 3)
+
+15.4
+
+Effects of ZeroRA
+
+We also show line charts of PSNR and FID during the
+finetuning in Fig. 29 with and without ZeroRA. The blue
+curve without ZeroRA is unstable at the beginning of the
+finetuning, while the red one with ZeroRA enjoys better
+convergence and stability. Because adding extra structural
+features without ZeroRA leads to dramatic output changing,
+which harms the vulnerable GAN training.
+
+Quantitative Results with Different Masks
+
+We show more quantitative results with different masking
+rates from 10% to 50% and mixture of segmentation and
+irregular masks in Tab. 15.
+
+15.5
+
+User Study
+
+We conduct user studies on several models to validate the
+effectiveness of our model from the perspective of humans.
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+(a) Image (256)
+
+(b) Edge (512)
+
+(c) Edge (1024)
+
+20
+
+(d) Edge (2048)
+
+(e) Line (512)
+
+(f) Line (1024)
+
+(g) Line (2048)
+
+Figure 24. Iteratively outputs of SSU which have sizes from 512 to 2048. The results are consistent and robust.
+Table 15
+Quantitative inpainting results on Indoor and Places2 with different mask ratios.
+
+PSNR↑
+
+SSIM↑
+
+FID↓
+
+LPIPS↓
+
+Mask
+10~20%
+20~30%
+30~40%
+40~50%
+Mixed
+10~20%
+20~30%
+30~40%
+40~50%
+Mixed
+10~20%
+20~30%
+30~40%
+40~50%
+Mixed
+10~20%
+20~30%
+30~40%
+40~50%
+Mixed
+
+EC
+28.18
+25.14
+23.02
+21.55
+24.073
+0.951
+0.916
+0.876
+0.835
+0.884
+9.56
+16.223
+23.48
+31.16
+22.02
+0.054
+0.094
+0.140
+0.189
+0.135
+
+Indoor (256×256)
+MST LaMa ZITS
+28.72 29.05 29.87
+25.66 25.96 26.66
+23.53 23.87 24.64
+22.02 22.39 23.13
+24.52 25.20 25.57
+0.954 0.956 0.961
+0.922 0.925 0.933
+0.886 0.890 0.901
+0.848 0.855 0.870
+0.894 0.902 0.907
+8.56
+8.01
+7.18
+15.88 13.23 12.13
+22.69 18.77 16.51
+31.06 23.47 20.87
+21.65 16.97 15.93
+0.050 0.044 0.038
+0.087 0.078 0.068
+0.129 0.117 0.101
+0.172 0.156 0.136
+0.122 0.112 0.098
+
+ZITS++
+30.39
+27.21
+25.16
+23.59
+26.15
+0.965
+0.940
+0.912
+0.882
+0.917
+6.62
+11.10
+15.61
+19.60
+14.61
+0.036
+0.062
+0.093
+0.126
+0.090
+
+Table 16
+Efficient ablations of axial attention module. FPS is the Frames Per
+Second during the inference. The GPU memory is test on single Tesla
+V100 with batch size 8.
+
+w./o. Axial
+with Axial
+
+FPS
+6.41
+7.89
+
+GPU Memory (MB)
+14845
+10547
+
+Specifically, we invite 10 volunteers who are not familiar
+with image inpainting to judge the quality of inpainted
+images. On Indoor and Places2, five methods are compared,
+which including EC [5], MST [6] LaMa [2], Co-Mod [19]
+and ours. Given the masked inputs, we randomly shuffle
+and combine the results of five methods together. Then,
+volunteers are required to choose the best one from each
+group. To improve the experience and quality of the user
+study, a Gradio-based [95] interface shown in Fig. 30 is built.
+As shown in Fig. 31, our method outperforms the other three
+competitors on both two datasets. Especially, our method
+can achieve a great advantage compared with the baseline
+
+EC
+26.60
+24.26
+22.59
+21.27
+23.31
+0.913
+0.872
+0.828
+0.783
+0.839
+1.95
+3.791
+6.98
+11.49
+6.21
+0.073
+0.111
+0.152
+0.194
+0.149
+
+HiFill
+24.04
+21.649
+19.96
+18.63
+20.76
+0.883
+0.818
+0.751
+0.682
+0.770
+4.71
+11.93
+25.16
+44.68
+21.33
+0.119
+0.189
+0.265
+0.343
+0.137
+
+Places2 (256×256)
+Co-Mod MST LaMa
+26.40
+28.13 28.23
+23.61
+25.07 25.31
+21.73
+23.07 23.43
+20.28
+21.53 22.03
+22.57
+24.02 24.37
+0.926
+0.941 0.942
+0.880
+0.898 0.901
+0.831
+0.852 0.859
+0.781
+0.803 0.814
+0.843
+0.862 0.869
+0.52
+0.76
+0.45
+1.00
+1.86
+0.95
+1.64
+3.83
+1.72
+2.38
+6.80
+2.81
+1.49
+3.53
+1.63
+0.053
+0.047 0.047
+0.098
+0.082 0.083
+0.140
+0.120 0.121
+0.184
+0.160 0.161
+0.246
+0.122 0.155
+
+ZITS
+28.31
+25.40
+23.51
+22.11
+24.42
+0.942
+0.902
+0.860
+0.817
+0.870
+0.43
+0.88
+1.55
+2.51
+1.47
+0.042
+0.073
+0.107
+0.143
+0.108
+
+ZITS++
+29.15
+26.19
+24.23
+22.76
+25.13
+0.950
+0.915
+0.877
+0.837
+0.884
+0.36
+0.72
+1.24
+2.01
+1.19
+0.038
+0.066
+0.097
+0.131
+0.094
+
+method i.e., LaMa.
+15.6
+
+Results of Rectangular Masks
+
+Here we provide some results of 40% center rectangular
+masks of 1k Places(512) images without any retraining in
+Tab. 18. Note that Co-Mod [19] is the only one trained with
+some rectangular masks while other methods have not been
+trained with similar masks. Moreover, we compare related
+qualitative results in Fig. 32. And the classical exemplarbased inpainting [14] is also included. Traditional exemplarbased method fails to work properly and is time-consuming.
+Co-Mod has hallucinated artifacts instead of generating
+plausible results. And LaMa results are blur with still high
+PSNR.
+15.7
+
+Comparisons of Texture Images
+
+We further compare our method with LaMa on 1,880 texture
+images [96] in Tab. 19 and Fig. 33, which contain strong periodic textures. Since this dataset is very suitable to LaMa [2],
+our method still has competitive performance.
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+(a) Masked Input
+
+(b) EC
+
+21
+
+(c) MST
+
+(d) LaMa
+
+(e) Ours
+
+Figure 25. Qualitative 256×256 results of Indoor dataset compared among EC [5], MST [6], LaMa [2], and ours. Zoom-in for details.
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+(a) Masked Input
+
+(b) EC
+
+(c) HiFill
+
+22
+
+(d) MST
+
+(e) Co-Mod
+
+(f) LaMa
+
+(g) Ours
+
+Figure 26. Qualitative 256×256 results of Places2 dataset compared among EC [5], HiFill [18], MST [6], Co-Mod [19], LaMa [2], and ours. Zoom-in
+for details.
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+23
+
+(b) Co-Mod
+
+(a) Masked image
+
+(c) LaMa
+
+(d) CATS from ZITS++
+
+(e) ZITS++
+
+Figure 27. Qualitative 256×256 results on FFHQ dataset compared among Co-Mod [19], LaMa [2], and ours. Zoom-in for details.
+Table 17
+Ablation studies of TSR on the Indoor dataset, where P., R., F1 mean Precision, Recall, and F1-score.
+
+Axial
+
+RPE
+
+"
+"
+
+"
+
+P.
+38.27
+38.30
+37.34
+
+Edge
+R.
+33.12
+32.90
+34.25
+
+F1
+34.78
+34.64
+35.10
+
+Table 18
+Quantitative results on 1k Places 512 images with 40% center
+rectangular masks.
+
+Co-Mod
+LaMa
+Ours
+
+15.8
+
+PSNR
+17.59
+19.69
+19.65
+
+FID
+52.38
+61.67
+55.85
+
+LPIPS
+0.262
+0.268
+0.239
+
+Results of MatterPort3D
+
+We use the test set of MatterPort3D [42] to evaluate the
+effectiveness of our method in the high-resolution structure
+
+P.
+52.93
+52.74
+53.60
+
+Line
+R.
+65.79
+66.48
+66.23
+
+F1
+57.73
+57.87
+58.35
+
+Avg
+F1
+46.26
+46.26
+46.72
+
+Table 19
+Quantitative results on 512 texture images from [96].
+
+PSNR
+SSIM
+FID
+LPIPS
+
+LaMa
+25.82
+0.875
+12.86
+0.138
+
+Ours
+25.67
+0.869
+11.67
+0.134
+
+recovery. MatterPort3D images tested in this paper consist
+of 1,965 indoor images in 1280×1024. We resized them into
+1024×1024 as shown in Fig. 34. We provide some qualitative
+results of our method and LaMa compared on MatterPort3D
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+(a) Masked image
+
+(b) MAT
+
+24
+
+(c) LaMa
+
+(d) Ours
+
+Figure 28. Qualitative 512×512 results of Places2 dataset compared among MAT [20], LaMa [2], and ours. Zoom-in for details.
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+25
+
+w/o ZeroRA
+with ZeroRA
+
+25.5
+24
+25.0
+
+FID
+
+PSNR
+
+22
+24.5
+
+20
+
+24.0
+18
+23.5
+
+w/o ZeroRA
+with ZeroRA
+0
+
+20000
+
+40000 60000
+steps
+
+16
+
+80000
+
+0
+
+20000
+
+40000 60000
+steps
+
+80000
+
+Figure 29. Structure enhanced finetuning with and without ZeroRA.
+(a) Maksed images
+
+(b) LaMa
+
+(c) Ours
+
+Figure 33. Inpainting results of 512×512 texture images [96] compared
+with LaMa and ours.
+
+Figure 30. Our concise user study interface built by Gradio [95].
+
+90.00%
+
+82.91%
+
+80.00%
+70.00%
+60.00%
+47.36%
+
+50.00%
+40.00%
+28.09%
+
+30.00%
+
+18.59%
+12.82%
+
+20.00%
+10.00%
+0.00%
+
+1.09%2.33%
+
+3.18%3.63%
+
+EC
+
+MST
+
+N/A
+
+Indoor
+
+Co-Mod
+Places2
+
+LaMa
+
+Our
+
+Figure 34. Examples of resized 1024×1024 MatterPort3D images.
+
+Figure 31. Average scores of Indoor and Places2 for user studies, which
+are collected from volunteers who select the best one from shuffled
+inpainted images.
+
+Masked input
+
+Exemplar-based
+
+Co-mod
+
+LaMa
+
+Ours
+
+Figure 32. Inpainting results of 512×512 images compared with
+Exemplar-based inpainting [14], Co-Mod, LaMa, and ours.
+
+(a) Masked Input
+
+(b) LaMa
+
+(c) Ours
+
+Figure 35. Inpainting results of LaMa [2] and ours in 1024×1024 MatterPort3D images.
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+(a) Masked Image
+
+(b) PhotoShop
+
+(c) ZITS++
+
+Figure 36. Inpainting results from PhotoShop2023 and ZITS++ of highresolution images.
+
+in Fig. 35. For these structural images, our results enjoy
+better structures.
+15.9
+
+Compare with the inpainting of PhotoShop
+
+To further explore the effectiveness of our proposed method.
+We compare our ZITS++ with the content-aware fill tool of
+a famous commercial software–PhotoShop2023 in Fig. 36.
+The reference-guided regions of the PhotoShop’s filling tool
+are automatically decided. Note that PhotoShop fails to
+preserve structures (row 1); it also suffers from complex environments (row 2). Although both PhotoShop and ZITS++
+could work well in nature scenes (row 3), ZITS++’s result is
+more harmonious.
+
+16
+
+M ORE H IGH -R ESOLUTION R ESULTS
+
+In Fig. 37, Fig. 38, Fig. 40, Fig. 39, and Fig. 41 we provide
+some object removal instances in large images from 1k to
+2k resolutions compared with LaMa [2]. Some cases are
+selected from the open-source testset of LaMa and others
+are selected from our HR-Flickr. Note that our method
+outperforms LaMa in scenes with weak textures such as
+row 2 in Fig. 37 and row 1 in Fig. 38. For the cases with
+sparse regular textures and lines (rows 1,3 of Fig. 37), our
+method can still achieve more clear borderlines. For the
+cases with dense regular textures (rows 2,3 of Fig. 38), LaMa
+gets competitive results, which shows that FFC in frequency
+fields has solved these problems properly. However, our
+method can also achieve results with less blur that benefited
+from precise structural constraints. For the larger case with
+2048 image size in Fig. 40, our method can still get more
+consistent results compared with LaMa.
+
+26
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+27
+
+Figure 37. High-resolution(1K) object removal results. From left to right are masked inputs, results from LaMa [2], and results from our method.
+Please zoom-in for more details.
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+28
+
+Figure 38. High-resolution(1K) object removal results. From left to right are masked inputs, results from LaMa [2], and results from our method.
+Please zoom-in for more details.
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+29
+
+Figure 39. More high-resolution(1K) object removal results from LaMa [2] examples. From left to right are masked inputs, results from LaMa, and
+results from our method. Please zoom-in for more details.
+
+Figure 40. The high-resolution inpainting comparison of 2K examples from our HR-Flickr. From left to right are the masked input, the result from
+LaMa [2], and the result from our method. Please zoom-in for more details.
+
+JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015
+
+30
+
+Figure 41. More high-resolution 1K object removal results from HR-Flickr. From left to right are masked inputs, results from LaMa [2], and results
+from our method. Please zoom-in for more details.
+
+

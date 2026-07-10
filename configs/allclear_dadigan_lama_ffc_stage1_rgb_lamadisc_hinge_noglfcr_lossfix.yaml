@@ -1,0 +1,227 @@
+# DaDiGAN + LaMa-FFC Stage1 消融：LaMa 原生判别器配比 + Hinge Loss + 去GLFCR耦合 + 损失梯度重平衡
+#
+# 相对于 main_v2 (2026-07-07T21-25-48) 的四项改动:
+#
+# 1. 判别器: 保持 LaMa 官方 Big-LaMa 规格 (pix2pixhd_nlayer, ndf=64, n_layers=4)
+#    经核实 LaMa 论文及公开代码 (saic-mdal/lama, big-lama/config.yaml)，
+#    LaMa 51M 模型使用的正是 ndf=64 + n_layers=4。当前配置与此一致，
+#    因此判别器架构不做修改。同时遵循 LaMa 的高 lr + 大 batch 训练配方。
+#
+# 2. Hinge Loss: adversarial_loss=r1 切换为 adversarial_loss=hinge
+#    动机：main_v2 中 R1 GP 从 0.026→0.010，判别器梯度死亡。
+#    Hinge loss (DeepFill v2 / SN-PatchGAN) 不需要 R1 正则化，
+#    天然抵抗梯度消失。代码中 HingeDiscriminatorLoss 已有完整实现。
+#
+# 3. 去 GLFCR 耦合: cloud_lowres_glfcr_coupled=false
+#    动机：GLFCRFusionStep 的 5x5 动态 SAR 卷积核在每步 DDIN 迭代中
+#    对光学特征做空间平滑，SAR 的低频主导特性导致输出丢失高频地物结构。
+#    保留低分辨率 FFC 分支（全局上下文），但关闭 SAR-光学逐像素耦合。
+#
+# 4. 损失梯度重平衡 (基于 main_v2 epoch-120 实际梯度贡献分析):
+#    - mask_mean 替代 image_mean: main_v2 中 image_mean 导致 40%云量样本的
+#      L1 梯度被全图像素数稀释为 10%云量样本的 1/4
+#    - missing-L1 40→50, known-L1 3→2: 提升缺失区重建主导权
+#    - perceptual 12→5, FM 15→5, adv 1.5→0.5: 压缩GAN项防止平滑化
+#    - 目标比例: 像素L1~55%, GAN~25%, Perceptual~20%
+
+run_name: allclear_dadigan_lama_ffc_lamadisc_hinge_noglfcr_lossfix
+output_root: outputs/allclear
+seed: 2026
+
+data:
+  root: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed
+  prefer_original_cld_shdw: false
+  cache_dir: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/cache/omnicloudmask_v4_low300_mh1000_image256_sar
+  train_manifest: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/omnicloudmask_v4_low300_mh1000/manifests/pairs_train.csv
+  val_manifest: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/omnicloudmask_v4_low300_mh1000/manifests/pairs_val.csv
+  test_manifest: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/omnicloudmask_v4_low300_mh1000/manifests/pairs_test.csv
+  optical_scale: 10000.0
+  load_sar: true
+  image_size: 256
+  # band_indices: 从13通道S2 TOA中仅加载RGB波段(B4=Red@3, B3=Green@2, B2=Blue@1)
+  # 必须与 model.s2_channels=3 保持一致，否则 optical_stem 收到14通道而只期望4通道
+  band_indices: [3, 2, 1]
+  rgb_indices: [3, 2, 1]
+  shadow_index: 3
+  cloud_index: 1
+
+model:
+  framework: dadigan_baseline
+  s2_channels: 3
+  sar_channels: 2
+  dim: 96
+
+  baseline_mask_mode: degraded
+  baseline_output_mode: composite
+
+  # 掩膜输入: LaMa 原生 zero-fill，配合 mask 通道拼接
+  cloud_mask_input_mode: lama_zero
+  cloud_append_mask: true
+  cloud_mask_fill_value: 0.0
+
+  # --- DaDiGAN 主路径 ---
+  cloud_ddin_steps: 4
+  cloud_prox_blocks: 8
+  cloud_reconstruct_blocks: 3
+  cloud_cab_sr_ratio: 8
+  cloud_cab_attention_mode: complement
+  cloud_msab_mode: restormer_mdta
+
+  # --- 高分辨率 Spatial FFC (bottleneck 后) ---
+  cloud_bottleneck_context: lama_ffc_feature
+  cloud_ffc_blocks: 6
+  cloud_ffc_ratio: 0.75
+  cloud_ffc_enable_lfu: false
+  cloud_ffc_downsample: 1
+  # Spatial Transform: 在 FFC 块 [1,3,5] 做频域旋转增强
+  # 沿用 main_v2 配置，角度初始化=80°（LaMa 原论文无此组件，来自 GLF-CR）
+  cloud_ffc_spatial_transform_layers: [1, 3, 5]
+  cloud_ffc_spatial_transform_pad_coef: 0.5
+  cloud_ffc_spatial_transform_angle_init_range: 80
+  cloud_ffc_spatial_transform_train_angle: false
+
+  # --- 低分辨率 FFC 分支 (全局上下文) ---
+  # 保留低分辨率 FFC 提供全局感受野，但关闭 GLFCR 逐像素 SAR-光学耦合
+  cloud_lowres_factor: 2
+  cloud_lowres_glfcr_coupled: false       # <--- 改动3: 关闭 GLFCR 耦合
+  cloud_lowres_glfcr_kernel_size: 5
+  cloud_lowres_opt_ffc_blocks: 9
+  cloud_lowres_opt_ffc_enable_lfu: false
+  cloud_lowres_opt_ffc_ratio: 0.75
+  cloud_lowres_opt_ffc_spatial_transform_layers: [1, 4, 7]
+  cloud_lowres_opt_ffc_spatial_transform_pad_coef: 0.5
+  cloud_lowres_opt_ffc_spatial_transform_angle_init_range: 80
+  cloud_lowres_opt_ffc_spatial_transform_train_angle: false
+
+  # Pre-PDA / pre-fusion context: 均关闭，由 bottleneck + lowres FFC 承担全局上下文
+  cloud_pre_pda_context: none
+  cloud_prefusion_context: none
+
+  # 输出激活: sigmoid 将生成器输出约束在 [0,1]，配合 raw GAN 或 composite 均安全
+  cloud_output_activation: sigmoid
+
+  # --- 判别器: LaMa 官方 Big-LaMa 规格 ---
+  # 参考: saic-mdal/lama big-lama/config.yaml discriminator 段
+  #        pix2pixHD NLayerDiscriminator, ndf=64, n_layers=4, input_nc=3
+  # 结论: 此规格已被 LaMa 在 4.5M 图像、51M 参数生成器上验证有效
+  discriminator: pix2pixhd_nlayer
+  cloud_discriminator_base_channels: 64
+  cloud_discriminator_layers: 4
+  cloud_discriminator_condition_mask: false
+
+loss:
+  # 仅训练 cloud/degraded 修复分支，关闭 shadow / final 相关损失
+  profile: dadigan_lama_ffc
+
+  # --- 像素级重建损失 ---
+  # missing-L1: 掩膜内(云区域)L1，主力重建监督。mask_mean 确保不同云量样本
+  #   的 L1 梯度可比 (不被全图像素数稀释)
+  # known-L1:   掩膜外(已知区域)L1，弱约束防止 context 被破坏
+  cloud_l1: 0.0
+  cloud_l1_missing: 50.0               # <--- 改动4: 40→50 + mask_mean 提升有效梯度
+  cloud_l1_known: 2.0                  # 3→2, 弱化已知区约束
+  cloud_l1_region: cloud
+  cloud_l1_reduction: mask_mean        # <--- 改动4: image_mean→mask_mean, 防止稀释
+
+  # KL 关闭: RGB 3 通道光谱分布物理意义弱，KL 正则不合理
+  cloud_kl: 0.0
+  cloud_kl_mode: softplus_sum
+  cloud_kl_reduction: mask_mean
+
+  # --- 对抗损失 ---
+  # Hinge loss: D(real)≥1, D(fake)≤-1, 梯度不饱和
+  # 参考: DeepFill v2 (ICCV 2019), SN-PatchGAN, LaMa 论文 Sec.5 讨论
+  #       "Wasserstein adversarial losses with gradient-penalized discriminators"
+  #       我们选择 Hinge (SN-PatchGAN 风格) 替代 R1 non-saturating
+  adversarial_loss: hinge              # <--- 改动2: r1→hinge, 无 R1 GP 崩溃风险
+  mask_as_fake_target: true            # LaMa 做法: 非掩膜区按 real 处理
+  allow_scale_mask: true
+
+  # 对抗权重: 从 1.5→0.5, 防 GAN 主导梯度
+  cloud_adv: 0.5                       # <--- 改动4: 1.5→0.5
+
+  # GAN 图像模式: composite (判别器看 mask-composited 结果)
+  # 非掩膜区是真值 → 判别器只评判 mask 内生成质量
+  cloud_gan_image: composite
+
+  # --- 特征匹配损失 ---
+  # 从 15→5 (L1 模式), main_v2 中 FM 贡献了 30% 总梯度(L1在特征空间→平滑)
+  feature_matching: 5.0                # <--- 改动4: 15→5
+  feature_matching_loss_type: l1       # L1 比 MSE 对异常特征更鲁棒
+
+  # --- 感知损失 ---
+  # HRF ResNet (ADE20K 预训练), cloud_context 模式 (mask-composited 结果)
+  # 从 12→5: main_v2 中贡献了 35% 总梯度, 对遥感域产生平滑偏向
+  perceptual: 5.0                      # <--- 改动4: 12→5
+  perceptual_type: hrf_resnet
+  perceptual_weights_path: /home/students/sushaoqi/CR/main/pretrained/lama/ade20k/ade20k-resnet50dilated-ppm_deepsup/encoder_epoch_20.pth
+  perceptual_input: cloud_context
+
+loss_schedule:
+  # L1 重建损失: 从 epoch 1 开始，无 ramp
+  cloud_l1: {start_epoch: 1, ramp_epochs: 0}
+  cloud_l1_missing: {start_epoch: 1, ramp_epochs: 0}
+  cloud_l1_known: {start_epoch: 1, ramp_epochs: 0}
+  cloud_kl: {start_epoch: 1, ramp_epochs: 0}
+
+  # GAN / FM: 从 epoch 15 开始，10 epoch ramp
+  # 比 main_v2 (epoch 8) 更长的纯 L1 预热期
+  # Hinge loss 对初始随机生成器的梯度更温和，可以稍早开启
+  cloud_adv: {start_epoch: 15, ramp_epochs: 10}
+  feature_matching: {start_epoch: 15, ramp_epochs: 10}
+
+  # Perceptual: 从 epoch 10 开始 (比 GAN 早，先在特征空间对齐)
+  perceptual: {start_epoch: 10, ramp_epochs: 10}
+
+train:
+  epochs: 120
+  batch_size: 4
+  # 梯度累积 4 步: 有效 batch = 4×4 = 16 (main_v2 的 4×2=8)
+  # 增大有效 batch 近似 LaMa 的大 batch 训练 (LaMa: 30-120)
+  grad_accum_steps: 4                  # <--- 改动1: 2→4 (来自LaMa大batch配方)
+  val_batch_size: 4
+  num_workers: 8
+  pin_memory: true
+  persistent_workers: true
+  prefetch_factor: 2
+
+  optimizer: adam
+  # 生成器 LR: 4e-5→1e-4, 向 LaMa 的高 lr 配方靠近 (LaMa: gen_lr=0.001)
+  # 考虑到遥感数据量 (万级 vs LaMa 百万级) 和 dim=96 的参数量，保守使用 1e-4
+  lr: 1.0e-4                           # <--- 改动1: 4e-5→1e-4 (LaMa配方)
+  # 判别器 LR: 保持 1e-4 (LaMa 标准: gen_lr/disc_lr = 10:1, 我们 1:1 因小batch)
+  disc_lr: 1.0e-4
+  weight_decay: 0.0
+
+  distributed: ddp
+  dist_backend: nccl
+  ddp_find_unused_parameters: false
+  optimizer_fused: false
+  optimizer_foreach: false
+
+  allow_tf32: true
+  matmul_precision: high
+  cudnn_benchmark: true
+  torch_compile: false
+
+  amp: true
+  amp_dtype: bf16
+
+  # 梯度裁剪: LaMa 使用 gradient_clip_val=1
+  grad_clip_norm: 1.0
+
+  lr_scheduler: none
+  val_every: 1
+  best_metric: pixel_total             # pixel_total = L1+KL (无GAN项干扰)
+  keep_best: 1
+
+eval:
+  batch_size: 4
+  num_workers: 8
+  pin_memory: true
+  persistent_workers: true
+  prefetch_factor: 2
+  visualize_splits: [val, test]
+  visualization_checkpoint: best
+  visual_samples_per_bucket: 5
+  visual_candidate_pool_per_bucket: 50

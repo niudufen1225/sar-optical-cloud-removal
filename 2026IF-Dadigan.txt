@@ -1,0 +1,1927 @@
+ev
+iew
+ed
+
+DADIGAN: A Dual Attention Blocks-Based Disentangled Iterative
+Generative Adversarial Network for Cloud and Shadow Removal on
+SAR and Optical Images
+Zhongchen Hea,b , Peng Wanga,c,∗ , Bo Huangd,∗ , Daiyin Zhua , Harry F. Leee and Henry Leungf,1
+a The Key Laboratory of Radar Imaging and Microwave Photonics, Nanjing University of Aeronautics and Astronautics, Nanjing 210016, China
+b Key Laboratory of Spatial-temporal Big Data Analysis and Application of Natural Resources in Megacities, Shanghai, 200063, China
+c The Faculty of Data Science, City University of Macau, Macau, 999078, China.
+d Department of Geography, The University of Hong Kong, Hong Kong,999077, China
+
+e Department of Geography and Resource Management,The Chinese University of Hong Kong, Hong Kong,999077, China
+f Department of Electrical and Computer Engineering, University of Calgary, Calgary AB T2N 1N4, Canada
+
+ABSTRACT
+
+Keywords:
+Attention mechanism
+Cloud and shadow removal
+Generative adversarial network
+Interpretability
+SAR-optical image fusion
+
+The application of optical remote sensing in Earth observation missions is often hindered by cloud
+and shadow contamination. Leveraging the cloud-penetrating capabilities of Synthetic Aperture
+Radar (SAR) images, many SAR-optical image fusion approaches have been proposed and have
+demonstrated remarkable effectiveness in cloud removal. However, two main challenges remain in
+these methods: (i) Shared features, which are shared information from both modalities, and private
+features, which are unique to each modality, have not been fully exploited in the fusion process due to
+the obvious gap between multimodal images; (ii) The feature extraction processes tend to be implicit
+and lack interpretability. In response to these challenges and bridge this gap, we propose a novel dual
+attention blocks-based disentangled iterative Generative Adversarial Network (GAN) for cloud and
+shadow removal, named as DADIGAN. Two specialized modules are designed for the generator of
+DADIGAN to enhance cloud removal performance: the deep disentangled iterative network (DDIN)
+and the progressive dual attention fusion module (PDAFM). First, we develop an observation model
+based on convolutional sparse coding that explicitly models both the SAR and cloudy images as
+compositions of shared and private features. The Proximal Gradient Descent Algorithm (PGDA)
+is utilized to optimize our proposed model, implemented through successive iteration steps. These
+iterative steps are unfolded into the DDIN to extract the shared and private features. Second,
+the PDAFM employs cross-attention blocks (CABs) to fuse shared and private features using a
+progressive fusion strategy. Additionally, a multi-head self-attention block (MSAB) is introduced to
+PDAFM to capture more global information and learn contextual dependencies, thereby recovering
+more detailed information in regions covered by thick clouds. Comprehensive experiments have
+demonstrated that our proposed method delivers superior visual results and quantitative assessments
+under different land cover types and various levels of cloud and shadow coverage. The code for this
+article will be accessed at https://github.com/NUAA-RS/DADIGAN.
+
+no
+
+1. Introduction
+
+tp
+ee
+rr
+
+ARTICLE INFO
+
+Pr
+
+ep
+
+rin
+t
+
+With the continuous improvement of remote sensing
+detection technologies, massive remote sensing data have
+increasingly become the predominant method for the Earth
+monitoring missions [1]. Various types of remote sensing
+images have emerged, among which optical remote sensing
+images are essential for numerous applications including
+geographic resource surveys, ecological environment monitoring, and meteorological disaster forecasting owing to
+their good visual result and sufficient spectral information.
+However, data from the USGS and Landsat ETM+ indicate
+that clouds obscure 66% of the Earth’s surface and cover
+approximately 35% of the land area [2–4]. The imaging
+mode of optical remote sensing results in inevitable contamination by cloud and shadow, diminishing the usability of
+these images, especially for Earth observation missions that
+∗ Corresponding author:Bo Huang, Peng Wang
+1 Zhongchen He and Peng Wang contribute equally to this work.
+
+:
+
+require continuous time series of optical remote sensing images [5]. Consequently, reconstructing high-fidelity cloudfree images in optical remote sensing, which are covered by
+cloud and shadow, become a significant challenge.
+The challenge of cloud and shadow removal in optical
+images is how to accurately reconstruct the spectral-spatial
+information of cloud-covered areas using auxiliary information. Various approaches have been developed to enhance
+the performance of reconstructed images, which can be
+broadly categorized based on the type of auxiliary information they utilize: single image restoration-based methods,
+multi-temporal-based approaches and multi-sensor-based
+approaches. Single-image restoration approaches generally
+assume that cloud-contaminated and cloud-less regions in
+the same image share similar geographical characteristics
+[6, 7]. Based on this assumption, they use information
+from clear regions to reconstruct cloud-covered areas. Additionally, some single image restoration-based approaches
+are proposed to deal with thin cloud and haze images
+where surface information is not completely obscured, pixel
+correction techniques [8] can be applied to retain useful
+Page 1 of 17
+
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=4946996
+
+ev
+iew
+ed
+tp
+ee
+rr
+
+Fig. 1. The frameworks of two main fusion strategies used in the existing methods and our proposed fusion strategy.
+
+Pr
+
+ep
+
+rin
+t
+
+no
+
+information while removing thin cloud and haze. However,
+these methods often fail to effectively deal with these cloudy
+images in which thick cloud-covered regions occupy a large
+proportion [9]. To address the issue of large areas covered
+by thick clouds, some researchers have proposed multitemporal approaches [10–12], which utilize cloud-free data
+from other time periods in place of pixels from cloudcontaminated regions, to reconstruct the spatial-spectral
+information of thick clouds coverage regions. The capabilities of multi-temporal methods are often limited by
+the rapid geomorphologic changes over short periods of
+time and prolonged cloudy weather [13]. Furthermore, the
+computational overhead of this kind of method is generally
+quite large. Multisensor-based approaches aim to leverage
+complementary information from other satellite sensors to
+predict the region of cloud obscuration [14–16]. Synthetic
+Aperture Radar (SAR) is an active detection imaging system
+that captures detailed ground information by transmitting
+electromagnetic pulses and receiving the reflected signals
+[17]. This capability enables SAR to provide all-weather
+ground monitoring, even under persistent cloud coverage.
+Consequently, SAR images can offer valuable texture information of cloud-covered regions, which makes SAR-optical
+image fusion methods have gained popularity in the remote
+sensing community.
+Many cloud removal methods using SAR images as
+auxiliary data in optical remote sensing image have been
+proposed over the past few years [18–25]. These methods
+primarily employ two fusion strategies. The first strategy
+:
+
+[18–20, 23, 24], illustrated in Fig. 1(a), directly stacks the
+cloudy and SAR images as the input of the network to
+extract feature, which overlooks the unique information to
+each modality. The second strategy [21, 22, 25], shown in
+Fig. 1(b), extracts features from the cloudy and SAR images
+separately, then fuses them using some specific techniques
+such as concatenation or element-wise addition, which neglects the shared information between different modalities.
+It is worth noting that optical and SAR images have shared
+information because they capture ground information from
+the same scene. At the same time, they also have private
+information due to the modal heterogeneity. This can be
+proved by the visualization results of shared and private
+features from optical and SAR images under different levels
+of cloud and shadow coverage in Fig. 2. However, none of
+these approaches consider the two fusion strategies simultaneously, resulting in insufficient fusion of shared and private
+features. Moreover, their feature extraction process is often
+implicit and lacks interpretability.
+To alleviate these issues mentioned above, we develop
+a novel dual attention blocks-based disentangled iterative
+Generative Adversarial Network (DADIGAN) for cloud
+and shadow removal. As Fig. 1(c) illustrates, a progressive
+fusion strategy is devised in the generator of DADIGAN
+which can reconstruct cloud-contaminated regions in optical
+images by fully exploiting the shared and private features.
+Overall, the generator of DADIGAN consists of three components: the deep disentangled iterative network (DDIN),
+the progressive dual attention fusion module (PDAFM), and
+Page 2 of 17
+
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=4946996
+
+ev
+iew
+ed
+tp
+ee
+rr
+
+(a) Cloudy images
+
+(b) SAR images
+
+(c) Private feature
+
+(d) Shared feature
+
+(e) Private feature
+
+Fig. 2. The visualization results of shared and private features from cloudy and SAR images under different levels of cloud and shadow
+coverage, where the feature visualization results in the third and fifth columns represent the private features of the cloudy and SAR images,
+respectively.
+
+ep
+
+rin
+t
+
+no
+
+the reconstruction block (RB). Specifically, we propose an
+observation model based on convolutional sparse coding
+that explicitly models both the SAR and optical images as
+compositions of shared and private features. The Proximal
+Gradient Descent Algorithm (PGDA) is used to optimize
+the proposed model, implemented by successive iteration
+steps. These iterative steps are unfolded into the DDIN
+to extract shared and private features. PDAFM adopts two
+cross-attention blocks (CABs) to fuse shared and private
+features based on a progressive fusion strategy. The multihead self-attention block (MSAB) is also introduced to the
+PDAFM to capture global information and learn contextual
+dependencies to recover more detailed information under
+thick cloud coverage regions. Then, the RB decodes the
+fused features to reconstruct high-fidelity cloud-free images. Finally, the performance of the proposed method is
+further improved by the adversarial interaction of the GAN.
+Comprehensive experiments have demonstrated that our
+proposed method performs with superior visual results and
+quantitative assessments on the SEN12MS-CR dataset.
+The main contributions of this paper are threefold:
+
+• Unlike most SAR-optical image fusion approaches
+
+Pr
+
+that rely entirely on black-box models, this paper proposes a novel dual attention blocks-based disentangled iterative generative adversarial network (DADIGAN) for cloud and shadow removal, which combines the interpretability of model-driven methods
+with the generalization capabilities of deep learning
+to effectively reconstruct regions covered by cloud
+and shadow.
+
+:
+
+• We show how to solve a convolutional sparse codingbased observation model to drive deep learning to
+extract shared and private features from SAR and
+cloudy images for the first time. An intuitive analysis
+of the feature extraction mechanism is facilitated by
+rationally unfolding iterative steps into neural network modules.
+
+• A progressive dual attention fusion module is devised
+to adopt two cross-attention blocks to progressively
+fuse shared and private features from different modalities. In addition, the multi-head self-attention block
+is employed to capture global information and learn
+contextual dependencies, thereby recovering more
+detailed information in regions with thick cloud coverage.
+
+For the reminder of this paper: Section 2 introduces
+background information about deep learning-based methods for cloud removal and deep unfold networks. Section
+3 describes our proposed network DADIGAN in detail.
+Section 4 presents the experiment results based on the
+SEN12MS dataset. Section 5 provides some disscussions on
+the analysis. Section 6 gives the conclusion of this paper.
+
+2. Related work
+2.1. Deep learning-based methods for cloud
+removal
+Following the vigorous improvement of deep learning
+[26], deep learning has become crucial in remote sensing
+image processing. Over the past few years, numerous deep
+Page 3 of 17
+
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=4946996
+
+ev
+iew
+ed
+
+from different modalities simultaneously, resulting in the
+poor generalization.
+
+2.2. Deep unfolding networks
+
+Deep unfolding networks (DUNs) are implemented by
+unrolling a series of iterative steps derived from solving
+optimization problems into neural network modules, which
+are then trained in an end-to-end manner. Generally, DUNs
+combine the interpretability of model-driven approaches
+with the generalization capabilities of data-driven methods, significantly enhancing the interpretability of existing
+deep learning methods [33]. Over these years, DUNs have
+been extensively applied to various remote sensing image
+processing problems, including hyperspectral image superresolution [34–36], hyperspectral image denoising [37], and
+remote sensing image fusion [38]. For the discussed image
+fusion problems, Xie et al. embedded the low-rank properties of hyperspectral images into a generalization model to
+create a new multispectral and hyperspectral image fusion
+model [34]. The iterative steps used to optimize the model
+are unfolded into an interpretable deep network, facilitating
+straightforward analysis of the internal mechanisms. Qu et
+al. designed a GAN-guided unfolded network to present the
+process of converting an observation model into an interpretable network through deep unfolding [38], which can
+achieve the better pansharpened results in an unsupervised
+manner. Dong et al. developed an innovative Bayesian inference model based on Gaussian noise prior for hyperspectral
+image super-resolution [39], enabling effective performance
+even when input data is polluted by the noise. It is obvious
+that establishing a reasonable observation model is a crucial
+precondition for realizing deep unfolding networks. Due to
+modality heterogeneity, establishing an observation model
+between optical and SAR images according to the above
+methods is challenging. Thus, we use convolutional sparse
+coding to explicitly model optical and SAR images as a
+combination of shared and private features in this paper.
+The reasons for constructing the observation model based on
+convolutional sparse coding are twofold: first, convolutional
+sparse coding performs well and shows great potential in
+a series of multimodal learning tasks [40, 41]. Second,
+convolutional sparse coding is an extension of sparse representation [42]. Sparse representation-based optical-SAR
+image fusion methods for cloud removal have achieved
+excellent performance [15], demonstrating the possibility of
+cloud removal by means of convolutional sparse coding.
+
+Pr
+
+ep
+
+rin
+t
+
+no
+
+tp
+ee
+rr
+
+learning-driven approaches for optical images cloud removal have emerged, particularly those utilizing generative
+adversarial networks (GANs) and residual networks, which
+have demonstrated outstanding performance. As we all
+know, the generator in a GAN aims to yield a fake image that
+closely resembles the target image, while the discriminator
+strives to distinguish the generated and target images [27].
+Their adversarial interaction with each other guides the
+GAN to reconstruct the high-fidelity cloud-free images.
+Bermudez et al. [28] introduced the conditional GAN-based
+method to reconstruct cloud-covered regions by translating
+SAR images into cloud-less optical images. However, its
+visual results were unsatisfactory on account of the lack of
+prior spectral information in the SAR images. Subsequently,
+Grohnfeldt et al. improved the Pix2pix model [29] and proposed a new cGAN-based cloud removal method, SAR-OptcGAN [14], which eliminated cloud and shadow by fusing
+cloud-covered images with SAR images. Darbaghshahi et
+al. combined the aforementioned methods and developed
+a two-stage GAN-based network [30], that SAR images
+first were translated into cloud-less optical images and
+then cloud removal was performed. Gao et al. utilized the
+feature relationship between multimodal images to convert
+SAR images into simulated optical images. These simulated
+optical images, along with SAR and cloud-covered images,
+were used as network inputs to generate cloud-less images
+[31]. Moreover, they designed a local loss function to focus
+on the reconstruction of cloud-contaminated areas. Li et al.
+[21] combined the strengths of both Transformer and GAN
+to learn global and local relationships in remote sensing
+imagery for reconstructing cloud-free multispectral images
+(TransGAN-CFR). Furthermore, they introduced a triplet
+loss function to improve the performance of TransGANCFR. Residual networks typically use the residual block
+as their basic unit, which consists of several convolutional
+layers and a skip connection. The principle of residual
+blocks is to employ the skip connection to add inputs to the
+output, thereby addressing gradient vanishing and explosion
+issues occurring in deep neural networks [32]. Due to
+their exceptional performance, residual networks have been
+applied in many visual tasks, such as image restoration and
+super-resolution. Recently, several residual network-based
+methods have been proposed to mitigate the challenge of
+cloud contamination in remote sensing images. Meraner
+et al. [22] leveraged residual networks to achieve superior
+performance in handling thin clouds removal (DSen2-CR),
+but the direct stacking of SAR and cloud-covered images in
+DSen2-CR overlooks the internal interaction correlation of
+multimodal images, which caused adverse reactions under
+thick cloud coverage. To mitigate this issue, Li et al. developed a hierarchical fusion network (HS2P) using residual
+blocks embedded with the channel attention mechanism.
+This allows HS2P to adaptively select more useful features
+and avoid treating channel-wise features from multimodal
+images equally [19]. Despite the decent performance of the
+SAR-optical data fusion methods based on these network
+structures, they fail to consider shared and private features
+:
+
+3. Method
+3.1. Overview of the proposed network
+The objectives of the proposed approach is to mitigate
+the inability to adequately fuse shared and private features
+and the lack of interpretability in the feature extraction
+process based on black-box models. In addition to improving the performance of the proposed method with the
+aid of the powerful generative capabilities of GAN, two
+specific designs are proposed in the generator to address the
+aforementioned problem. More details are presented below.
+Page 4 of 17
+
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=4946996
+
+ev
+iew
+ed
+tp
+ee
+rr
+Fig. 3. The structure of the generator.
+
+We establish an observation model based on convolutional sparse coding to fully extract the shared and private
+features from different modalities. The observation model
+is expressed as follows:
+∑ 𝑝
+∑
+𝑥𝑖 ∗ 𝑝𝑖
+(1)
+𝑥𝑠𝑖 ∗ 𝑠𝑖 +
+𝐼𝑜 =
+𝑖
+
+𝑖
+
+𝐼𝑠 =
+
+∑
+
+𝑦𝑠𝑖 ∗ 𝑠𝑖 +
+
+∑
+
+𝑦𝑣𝑖 ∗ 𝑣𝑖
+
+(2)
+
+𝑖
+
+no
+
+𝑖
+
+ep
+
+rin
+t
+
+where ∗ denotes convolution operation, 𝐼𝑜 ∈ 𝑅𝐶1 ×𝐻×𝑊
+denotes the cloud-covered optical remote sensing image,
+and 𝐼𝑠 ∈ 𝑅𝐶2 ×𝐻×𝑊 denotes the SAR image, where 𝐻 and
+𝑊 denote the width and height of 𝐼𝑜 and 𝐼𝑠 , 𝐶1 and 𝐶2
+denote the number of channels of the cloud-covered and
+SAR image. 𝑥𝑠𝑖 and 𝑦𝑠𝑖 are the shared feature filters of 𝐼𝑜 and
+𝐼𝑠 , and 𝑠𝑖 denotes the shared features of 𝐼𝑜 and 𝐼𝑠 . 𝑥𝑝𝑖 and
+𝑦𝑣𝑖 are the private feature filters of 𝐼𝑜 and 𝐼𝑠 , respectively.
+𝑝𝑖 and 𝑣𝑖 are the private features of 𝐼𝑜 and 𝐼𝑠 , respectively.
+Assuming that all of the filter parameters are known, we can
+optimize the following problem to get the shared and private
+features.
+∑
+∑ 𝑝
+1
+arg min ||𝐼𝑜 −
+𝑥𝑠𝑖 ∗ 𝑠𝑖 +
+𝑥𝑖 ∗ 𝑝𝑖 )||2𝐹
+𝑃 ,𝑉 ,𝑆 2
+𝑖
+𝑖
+∑
+∑
+1
+(3)
++ ||𝐼𝑠 −
+𝑦𝑠𝑖 ∗ 𝑠𝑖 +
+𝑦𝑣𝑖 ∗ 𝑣𝑖 ||2𝐹
+2
+𝑖
+𝑖
+
+Pr
+
++ 𝜆𝑠 𝑅(𝑆) + 𝜆𝑝 𝑅(𝑃 ) + 𝜆𝑣 𝑅(𝑉 )
+
+where 𝑅(.) denotes the regularization term [43] related to 𝑃 ,
+𝑉 and 𝑆. 𝑃 and 𝑉 represent the private fetures from each
+modality, 𝑆 represents the shared features from different
+modalities. 𝜆𝑠 , 𝜆𝑝 and 𝜆𝑣 denote the trade-off parameters. A
+:
+
+series of iterative steps can be obtained by solving the model
+with the help of a specific optimization algorithm [44]. Then
+we unfold these iterative steps into some neural network
+modules, so as to extract the shared and private features.
+Corresponding to the fusion of shared and private features, an challenge is to make a reasonable fusion strategy
+that can avoid the adverse reactions caused by direct stacking of features from different modalities and allow effective interactions between shared and private features from
+different modalities. Based on the above considerations,
+we design a progressive dual attention fusion module. This
+progressive fusion process is defined as follows:
+𝐹 = 𝑀𝑆𝐴𝐵(𝐶𝐴𝐵(𝐶𝐴𝐵(𝑃 , 𝑆), 𝑉 ))
+
+(4)
+
+where 𝐶𝐴𝐵(.) and 𝑀𝑆𝐴𝐵(.) denote the cross-attention
+block (CAB) and the multi-head self-attention block (MSAB),
+respectively. The purpose of the CAB is to fuse discrepancy
+information from different branches, while the objective
+of the MSAB is to improve the learning ability of global
+features to reconstruct information in regions covered by
+thick clouds. Finally, the fused feature 𝐹 is then restored
+to a high-quality cloud-free image through the RB. As a
+result, our proposed method can completely reconstruct the
+spatial-spectral information of cloud and shadow coverage
+regions, significantly improving the interpretability of the
+model.
+
+3.2. Generative network
+3.2.1. Shared and private features extraction module
+Obviously, it is very difficult to solve each variable
+in Eq. (3) separately by the joint optimization. Therefore,
+we decompose the whole optimization problem into three
+Page 5 of 17
+
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=4946996
+
+𝑔(𝑃 𝑡−1 ) =
+
+ev
+iew
+ed
+
+where 𝑃 𝑡−1 denotes the result after the (𝑡 − 1)𝑠𝑡 iteration, 𝜂𝑝
+is the iteration step.
+∑
+∑
+1
+||(𝐼𝑜− 𝑥𝑠𝑖∗𝑠𝑖 )− 𝑥𝑝𝑖 ∗ 𝑝𝑖 ||2𝐹 +𝜆𝑝 𝑅(𝑃 )
+2
+𝑖
+𝑖
+
+(9)
+
+The optimal solution of Eq. (8) can be defined using the
+proximal operator as follows:
+
+(a) Private feature extraction block for optical image (PFEB)
+
+(b) Private feature extraction block for SAR image (VFEB)
+
+𝑃 𝑡 = 𝑝𝑟𝑜𝑥𝜂𝑝 𝜆𝑝 (𝑃 𝑡−1 − 𝜂𝑝 ∇𝑔(𝑃 𝑡−1 ))
+
+(10)
+
+▵ 𝑔(𝑃 𝑡−1 )=𝑋𝑝 ∗T (𝑋𝑠 ∗ 𝑆 𝑡−1 + 𝑋𝑝 ∗ 𝑃 𝑡−1 − 𝐼𝑜 )
+
+(11)
+
+tp
+ee
+rr
+
+where ∗T is the transpose convolution operation which can
+learned by the transpose convolutional layer, 𝑋𝑝 ∈ 𝑅1×𝑛×𝑛×𝑖
+and 𝑋𝑠 ∈ 𝑅1×𝑛×𝑛×𝑖 represent the filters involved with 𝑥𝑝𝑖
+and 𝑥𝑠𝑖 , respectively. 𝑝𝑟𝑜𝑥𝜂𝑝 𝜆𝑝 is the proximal operator that
+depends on the regularization term.
+(2) Updating 𝑉 : analogously, the quadratic approximation of Eq. (6) is used to update the private features 𝑉 , which
+can be expressed as:
+
+(c) Shared feature extraction block (SFEB)
+
+1
+arg min ||𝑉 −(𝑉 𝑡−1−𝜂𝑣 ▵ 𝑔(𝑉 𝑡−1 ))||2𝐹 +𝜂𝑣 𝜆𝑣 𝑅(𝑉 )
+2
+𝑉
+
+(12)
+
+where 𝑉 𝑡−1 denotes the result after the (𝑡 − 1)𝑠𝑡 iteration, 𝜂𝑣
+is the iteration step.
+
+(d) The structure of 𝑃 𝑟𝑜𝑥𝑁𝑒𝑡
+
+Fig. 4. The network architectures of deep disentangled iterative
+networks (DDIN).
+
+no
+
+subproblems and alternately update each of them while
+fixing the other variables for solving each subproblem. The
+PGDA is adopted to adddress each of the three subproblems.
+The solution process is shown as follows:
+
+rin
+t
+
+∑ 𝑝
+∑
+1
+𝑥𝑖 ∗ 𝑝𝑖 )||2𝐹 +𝜆𝑝 𝑅(𝑃 )
+arg min ||𝐼𝑜− (𝑥𝑠𝑖 ∗ 𝑠𝑖 +
+2
+𝑃
+𝑖
+𝑖
+∑
+∑
+1
+arg min ||𝐼𝑠− (𝑦𝑠𝑖 ∗ 𝑠𝑖 +
+𝑦𝑣𝑖 ∗ 𝑣𝑖 )||2𝐹 +𝜆𝑣 𝑅(𝑉 )
+2
+𝑉
+𝑖
+𝑖
+
+ep
+
+∑
+∑ 𝑝
+1
+arg min ||𝐼𝑜− (𝑥𝑠𝑖 ∗ 𝑠𝑖 +
+𝑥𝑖 ∗ 𝑝𝑖 )||2𝐹 +
+2
+𝑆
+𝑖
+𝑖
+∑
+∑
+1
+||𝐼𝑠− (𝑦𝑠𝑖 ∗ 𝑠𝑖 +
+𝑦𝑣𝑖 ∗ 𝑣𝑖 )||2𝐹 +
+2
+𝑖
+𝑖
+
+(5)
+
+(6)
+
+(7)
+
+∑
+∑
+1
+𝑔(𝑉 𝑡−1 ) = ||(𝐼𝑠− 𝑦𝑠𝑖 ∗ 𝑠𝑖 )− 𝑦𝑣𝑖 ∗ 𝑣𝑖 ||2𝐹 +𝜆𝑣 𝑅(𝑉 )
+2
+𝑖
+𝑖
+
+(13)
+
+The optimal solution of Eq. (12) can be defined using the
+proximal operator as follows:
+𝑉 𝑡 = 𝑝𝑟𝑜𝑥𝜂𝑣 𝜆𝑣 (𝑉 𝑡−1 − 𝜂𝑣 ∇𝑔(𝑉 𝑡−1 ))
+
+(14)
+
+▵ 𝑔(𝑉 𝑡−1 ) =𝑌𝑣 ∗T (𝑌𝑠 ∗ 𝑆 𝑡−1 + 𝑌𝑣 ∗ 𝑉 𝑡−1 − 𝐼𝑠 )
+
+(15)
+
+where 𝑌𝑣 ∈ 𝑅1×𝑛×𝑛×𝑖 and 𝑌𝑠 ∈ 𝑅1×𝑛×𝑛×𝑖 represent the filters
+involved with 𝑦𝑣𝑖 and 𝑦𝑠𝑖 , respectively. 𝑝𝑟𝑜𝑥𝜂𝑣 𝜆𝑣 is the proximal operator that depends on the regularization term.
+(3) Updating 𝑆: we first rewrite the Eq. (7) as follows:
+∑
+1
+arg min ||𝐼̃𝑜 −
+𝑥𝑠𝑖 ∗ 𝑠𝑖 ||2𝐹 +
+2
+𝑆
+𝑖
+1 ̃ ∑ 𝑠
+||𝐼 −
+𝑦𝑖 ∗ 𝑠𝑖 ||2𝐹 + 𝜆𝑠 𝑅𝑠 (𝑆)
+2 𝑠
+𝑖
+where 𝐼̃𝑠 = 𝐼𝑠 −
+
+(16)
+
+∑ 𝑣
+∑
+𝑦𝑖 ∗ 𝑣𝑖 , 𝐼̃𝑜 = 𝐼𝑜 − 𝑥𝑝𝑖 ∗ 𝑝𝑖 . We further
+𝑖
+
+𝑖
+
+simplify the first and second terms of Eq. (16), which can be
+expressed as:
+
+𝜆𝑠 𝑅(𝑆)
+
+∑
+1
+𝑙𝑖𝑠 ∗ 𝑠𝑖 ||2𝐹 + 𝜆𝑠 𝑅𝑠 (𝑆)
+arg min ||𝐼̃ −
+2
+𝑆
+𝑖
+
+1
+arg min ||𝑃−(𝑃 𝑡−1−𝜂𝑝 ▵ 𝑔(𝑃 𝑡−1 ))||2𝐹 +𝜂𝑝 𝜆𝑝 𝑅(𝑃 )
+2
+𝑃
+
+Where 𝐼̃ respresents the concentration of 𝐼̃𝑠 and 𝐼̃𝑜 . Similarly, the same approach as for 𝑃 and 𝑉 is used to optimize
+
+Pr
+
+(1) Updating 𝑃 : we solve the quadratic approximation
+of Eq. (4) [45] to update the private features 𝑃 , which can
+be expressed as follows:
+
+:
+
+(8)
+
+(17)
+
+Page 6 of 17
+
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=4946996
+
+ev
+iew
+ed
+tp
+ee
+rr
+
+Fig. 5. The pipeline of the progressive dual attention fusion module.
+
+this subproblem. The optimization process is shown as
+follows:
+1
+arg min ||𝑆−(𝑆 𝑡−1−𝜂𝑠 ▵ 𝑔(𝑆 𝑡−1 ))||2𝐹 +𝜂𝑠 𝜆𝑠 𝑅(𝑆)
+2
+𝑆
+
+(18)
+
+𝑆 𝑡 = 𝑝𝑟𝑜𝑥𝜂𝑠 𝜆𝑠 (𝑆 𝑡−1 − 𝜂𝑠 ∇𝑔(𝑆 𝑡−1 ))
+
+(19)
+
+̃
+▵ 𝑔(𝑆 𝑡−1 ) = 𝐿𝑠 ∗T (𝐿𝑠 ∗ 𝑆 𝑡−1 − 𝐼)
+
+(20)
+
+Pr
+
+ep
+
+rin
+t
+
+no
+
+Where 𝐿𝑠 ∈ 𝑅1×𝑛×𝑛×𝑖 represents the filters involved with
+𝐿𝑠 , 𝑝𝑟𝑜𝑥𝜂𝑠 𝜆𝑠 is the proximal operator that depends on the
+regularization term.
+As shown in Fig. 4(a-c), we unfold Eqs. (10) (14)
+(19) into deep disentangled iterative networks(DDIN) which
+contains three sub-networks, 𝑖.𝑒. PFEB, VFEB, and SFEB.
+Three sub-networks achieve the prediction of 𝑃 , 𝑉 , and
+𝑆, respectively. The parameters of 𝑋𝑝 , 𝑋𝑠 , 𝑌𝑠 , 𝑌𝑣 , and
+𝐿𝑠 are learnd by the convolutional layer, the size of all
+convolutional kernels is 3 ∗ 3, the number of channels is
+64 (Except for 𝐿𝑠 , the number of channels is 128). The
+paramters of 𝐿𝑠 ∗T , 𝑋𝑝 ∗T , and 𝑌𝑣 ∗T are learned by the
+̃𝑠 , 𝑋
+̃𝑝 ,
+transpose convolution layer, which are denoted as 𝐿
+and 𝑌̃𝑣 , respectively. It should be pointed out that instead
+of employing a hand-crafted image prior, we use Res-Net
+[46] to implicitly learn the prior information 𝑝𝑟𝑜𝑥𝜂𝜆 , 𝜂 is the
+reciprocal of the Lipschitz constant. The structure of ResNet is shown in Fig. 4(d).
+
+3.2.2. Progressive dual attention fusion module
+Existing feature fusion methods typically use elementwise addition to fuse shared and private features from
+multimodal images. However, the visualization results of
+shared and private features in Fig. 2 show that shared
+
+:
+
+features 𝑆 and private features 𝑃 are contaminated under
+thick cloud coverage. The element-wise addition operation
+directly transfers the features of cloud-covered regions into
+the fusion result, failing to accurately reconstruct the spatialspectral information of cloud-covered areas. Therefore, as
+shown in Fig. 5, progressive dual attention fusion module is
+devised to effectively fuse shared and private features and
+reduce adverse reaction caused by the element-wise addition, which consists of two CABs with the same structure
+and different parameters and a MSAB. Specifically, the first
+CAB fuses the private features 𝑃 of the optical image and
+shared features 𝑆 to obtain an intermediate feature 𝐹𝑀 .
+The private feature 𝑃 is linearly reshaped to the query 𝑄𝑝 ,
+and the shared feature 𝑆 is linearly transformed to the key
+𝐾𝑠 and value 𝑉𝑠 . A matrix multiplication of 𝑄𝑝 and the
+transpose of 𝐾𝑠 yields the attention weight matrix, which
+computes the feature similarity between 𝑄𝑝 and 𝐾𝑠 . This
+process is given as follows:
+𝑄𝑝 𝐾𝑠𝑇
+𝐴𝑡𝑡𝑒𝑛𝑡𝑖𝑜𝑛 = 𝑠𝑜𝑓 𝑡𝑚𝑎𝑥( √ )
+𝑑
+
+(21)
+
+Where 𝑑 is the scaling factor, which avoids the problem
+of vanishing softmax gradient caused by the dot product
+result becoming too large as 𝑑 increases. After that, we can
+remove similar features between 𝑃 and 𝑆 to transfer the
+private features 𝑃 of the optical image to the intermediate
+feature 𝐹𝑀 , This has the advantage of both the fusion of
+the discrepancy information in 𝑃 and 𝑆 and alleviating the
+feature transfer in the cloud coverage region. This process
+is shown below:
+𝐹𝑀 = 𝐿𝑖𝑛𝑒𝑎𝑟(𝑉𝑠 (1 − 𝐴𝑡𝑡𝑒𝑛𝑡𝑖𝑜𝑛)) + 𝑄𝑝
+
+(22)
+
+𝐹𝑀 = 𝑀𝐿𝑃 (𝑁𝑜𝑟𝑚(𝐹𝑀 )) + 𝐹𝑀
+
+(23)
+
+Page 7 of 17
+
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=4946996
+
+ev
+iew
+ed
+
+obtain the feature 𝐹𝐺 . Finally, we use a skip connection to
+add the input F to the output to obtain the final result 𝐹𝑓 𝑢𝑒𝑑 .
+𝐹𝑓 𝑢𝑒𝑑 = 𝑀𝑆𝐴𝐵(𝐹 ) ⊙ 𝐺(𝐹 ) + 𝐹
+
+Fig. 6. The network structure of the reconstruction block.
+
+3.2.3. Reconstruction module
+As shown in Fig. 6, we use residual blocks as the
+backbone structure of the RB, which consists of two residual
+blocks and a convolutional layer. Each residual block contains three convolutional layers and a skip connection, with
+the first two convolutional layers accompanied by a rectified
+linear unit (ReLU). The size of the convolutional kernel in
+each residual block is 3*3, and the numbers of input and
+output channels is 64. The final convolutional layer has a
+convolutional kernel size of 3*3 with 64 input channels and
+13 output channels to match the spectral dimension of the
+generated cloud-less image.
+
+3.3. Discriminative network
+
+The synthesized and real reference image are stacked as
+the input for the discriminator. The goal of the discriminator
+is to determine as accurately as possible whether the synthesized image is cloud-less image or not, thereby guiding
+the training direction of the generator. As Fig. 7 shows, the
+discriminator consists of five blocks of the same structure
+and a convolutional layer. Specifically, each block contains
+a convolutional layer with the convolutional kernel of 4*4, a
+normalization layer, and an activation function Leaky ReLu,
+where the stride of the convolutional layer is 2. However,
+The last convolutional layer has a convolutional kernel size
+of 3 and a stride of 1. The output feature dimension of the
+𝑖𝑡ℎ block is 24+𝑖 , 𝑖 ∈ [1, 5] and The last convolutional layer
+outputs a 1D data to represent the result of the discriminator.
+
+tp
+ee
+rr
+
+Where 𝑀𝐿𝑃 (.) represents the Multilayer Perceptron (MLP),
+𝑁𝑜𝑟𝑚(.) denotes the linear norm operation. Subsequently,
+the fusion process of the intermediate features 𝐹𝑀 and the
+private feature 𝑉 in the second CAB is the same as the first
+CAB, which are defined as follows:
+
+(31)
+
+𝑄𝑣 , 𝐾𝑓 , 𝑉𝑓 = 𝐿𝑖𝑛𝑒𝑎𝑟(𝑅𝑒𝑠ℎ𝑎𝑝𝑒(𝑉 , 𝐹𝑀 , 𝐹𝑀 )
+
+𝑄𝑣 𝐾𝑓𝑇
+𝐹 = 𝐿𝑖𝑛𝑒𝑎𝑟(𝑉𝑓 (1 − 𝑠𝑜𝑓 𝑡𝑚𝑎𝑥( √ ))) + 𝑄𝑣
+𝑑
+𝐹 = 𝑀𝐿𝑃 (𝑁𝑜𝑟𝑚(𝐹 )) + 𝐹
+
+(24)
+
+(25)
+(26)
+
+rin
+t
+
+no
+
+The self-attention mechanism [47] captures the dependencies between pixels at arbitrary positions and pixels
+at other locations through a global receptive field. This
+capability enhances the utilization of non-local features,
+proving its effectiveness in image restoration tasks and
+showing significant improvements in reconstructing regions
+covered by thick clouds [48–51]. Consequently, the MSAB
+is integrated into the PDAFM. As illustrated in Fig. 5,
+the fusion result F of the CABs is fed into the MSAB to
+better capture the global information. The fusion result F is
+first put into the normalization layer to stabilize the feature
+distribution. Then the attention map of F is computed by the
+multi-head self-attention mechanism, which computes the
+attention result of each head separately and concentrates the
+attention maps of all heads. The process of the MSAB is
+given below:
+𝑄, 𝐾, 𝑉 = 𝐹 𝑊
+
+ep
+
+ℎ𝑒𝑎𝑑𝑖 = 𝑠𝑜𝑓 𝑡 max( √ )𝑉𝑖
+𝑑
+𝑀𝑢𝑙𝑡𝑖ℎ𝑒𝑎𝑑 = 𝑐𝑜𝑛𝑐𝑎𝑡(ℎ𝑒𝑎𝑑1 , ℎ𝑒𝑎𝑑2 ...ℎ𝑒𝑎𝑑𝑖 )
+
+Pr
+
+𝑙𝑜𝑠𝑠= arg minmax 𝑐𝐺𝐴𝑁 (𝐺,𝐷)+𝜆1 1 (𝐺)+𝜆2 𝐾𝐿
+𝐺
+
+𝐷
+
+(32)
+
+(29)
+(30)
+
+𝑐𝐺𝐴𝑁 (𝐺, 𝐷)= 𝐸𝑚,𝑛∼𝑄𝑑𝑎𝑡𝑎 (𝑚,𝑛) [log 𝐷(𝑚, 𝑛)]
+
+(28)
+
+Where 𝑊 denotes the transformation matrix, 𝑆𝑝𝑖𝑙𝑡(.)
+represents the split function. After that, we introduce the
+gating mechanism 𝐺(.), which is used in feed-forward
+neural networks (FFN) to guide the attention results. It
+consists of a convolutional layer with a kernel of 1*1 and
+a GELU activation function. Then, a Hadamard product
+between G(F) and the attention result 𝑀 𝑎 is performed to
+
+:
+
+The loss function is utilized to optimize the parameters
+of the proposed network and guide the training direction of
+the generator, which can be denoted as 𝑙𝑜𝑠𝑠 . 𝑙𝑜𝑠𝑠 consists
+of three parts, defined by the following equation:
+
+where 𝑐𝐺𝐴𝑁 denotes the adversarial loss of the conditional
+GAN, 1 (𝐺) denotes the 𝐿1𝑙𝑜𝑠𝑠, 𝐾𝐿 denotes the Kullback–Leibler (KL) divergence loss [52]. 𝜆1 and 𝜆2 are the
+tuning parameters, which will be discussed in more detail in
+Section 5.3. More details about the loss function are given
+below. 𝐿𝑐𝐺𝐴𝑁 can be expressed as:
+
+(27)
+
+[𝑄1...𝑄𝑖 ],[𝐾1...𝐾𝑖 ],[𝑉1...𝑉𝑖 ]=𝑆𝑝𝑖𝑙𝑡(𝑄),𝑆𝑝𝑖𝑙𝑡(𝐾),𝑆𝑝𝑖𝑙𝑡(𝑉)
+𝑄𝑖 𝐾𝑖𝑇
+
+3.4. Loss function
+
++𝐸𝑚∼𝑄𝑑𝑎𝑡𝑎 (𝑚,𝑛) [log(1−𝐷(𝑚, 𝐺(𝑚)))]
+
+(33)
+
+where 𝑚 denotes the cloudy image, 𝑛 denotes the real
+cloud-free image, 𝑄𝑑𝑎𝑡𝑎 represents the data distribution,
+𝐺(𝑚) denotes the reconstructed cloud-less image, and 𝐷(.)
+represents the probability that the synthesized cloud-less
+image is close to the real reference image. 1 (𝐺) is mainly
+exploited to preserve more detailed information so that
+Page 8 of 17
+
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=4946996
+
+ev
+iew
+ed
+
+Fig. 7. The network structure of the discriminator.
+
+Method
+
+Input data
+
+tp
+ee
+rr
+
+Table 1
+Quantitative assessment of all comparison methods.
+
+PSNR↑
+
+SSIM↑
+
+SAM↓
+
+MAE↓
+
+raw
+
+Optical
+
+SAR
+
+20.3548
+
+0.5231
+
+19.5748
+
+0.0689
+
+Pix2pix
+McGAN
+SAR-opt-cGAN
+Dsen2-CR
+GLF-CR
+Align-CR
+ours
+
+✗
+✓
+✓
+✓
+✓
+✓
+✓
+
+✓
+✗
+✓
+✓
+✓
+✓
+✓
+
+26.2903
+26.4264
+26.7542
+26.9428
+28.9427
+27.9523
+30.2185
+
+0.8024
+0.8257
+0.8262
+0.8324
+0.8724
+0.8527
+0.9025
+
+12.2468
+10.7564
+9.6548
+8.9036
+8.0324
+8.5276
+7.1457
+
+0.0425
+0.0392
+0.0352
+0.0316
+0.0267
+0.0294
+0.0231
+
+1 (𝐺) =
+
+no
+
+the generated image is closer to the cloud-free image, the
+process is formulated as follows:
+1
+||𝑛 − 𝐺(𝑚)||1
+𝐻𝑊 𝐶1
+
+(34)
+
+rin
+t
+
+where 𝐻𝑊 𝐶1 represents the number of pixels of the multispectral image. We further introduce 𝐾𝐿 to regularize the
+spectral distribution between the reconstructed and cloudfree images, which can be denoted as follows:
+𝐾𝐿 = 𝐾𝐿(𝑝(𝐺(𝑚))||𝑞(𝑛))
+
+(35)
+
+ep
+
+where 𝑝(.) and 𝑞(.) denotes the probability distribution, used
+to enforce the spectral distribution of the generated image to
+be as similar as possible to that of the target image.
+
+4. Experimental results and analysis
+4.1. Dataset and evaluation metrics
+
+Pr
+
+To test the performance of the proposed network DADIGAN, we employed the largest public dataset SEN12MSCR to train and test both our method and the comparison
+method. This dataset was generated by processing freely
+available Sentinel satellite data, supported by the Copernicus Project. All data from SEN12MS-CR [53] is georeferenced with a ground sampling distance of 10 meters and
+
+:
+
+FLOPs
+
+Params
+
+61.0 GMac
+72.27 GMac
+91.68 GMac
+1241.68 GMac
+244.63 GMac
+174.92 GMac
+121.30 GMac
+
+11.45 M
+54.43M
+218.03 M
+18.94 M
+14.83 M
+43.52 M
+11.54 M
+
+encompasses all inhabited continents and meteorological
+seasons, maximizing data authenticity and generalization.
+Specifically, the observed regions in SEN12MS-CR are primarily derived from 175 non-overlapping regions of interest
+(ROIs), which contain a total of 122,218 triplets. Each triplet
+consists of a cloudy Sentinel-2 image, a dual-polarized
+Sentinel-1 SAR image, and a cloud-free Sentinel-2 image,
+each with a size of 256 ∗ 256 pixels. The acquisition times
+of the images within each triplet are closely matched to
+minimize training deviation due to variations between the
+reference and input images. 70%, 20%, and 10%of the 175
+ROIs are used for training, validation, and testing of the
+network, respectively. Notably, due to the different imaging
+principles between optical and SAR images, their values
+must be processed separately to meet network training
+requirements. The cropping ranges for the VV and VH
+channels in the dual-polarized SAR images are set to [25,0] and [0,32], respectively. For optical images, values
+are cropped to the range of [0,10000]. Then they are all
+normalized to fall between 0 and 1. To fully utilize the
+spectral information of multispectral images and the spatial
+information of SAR images, we use dual polarization channel data for SAR images and 13 bands data for multispectral
+images.
+Four commonly image quality metrics [54] are used
+in this experiment: PSNR and MAE evaluate the quality
+Page 9 of 17
+
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=4946996
+
+4.2. Experimental setup
+
+tp
+ee
+rr
+
+Our proposed method has been debugged in pytorch
+12.1 and trained on dual GPUs NVIDIA GTX 4090 with
+the Adam optimizer [56] using the following parameters:
+the learning rate of the generator and discriminator is empirically set as 4 × 10−5 , the entire training process was about
+200 epoches with a batchsize of 8, the tuning parameters in
+Eq. (32) are set as 𝜆1 = 100 and 𝜆2 = 100. Additionally,
+we use three convolutional layers with the kernel of 3*3 to
+initialize private features 𝑉0 , 𝑃0 and shared features 𝑆0 , the
+iteration stage 𝑇 is set to 3.
+
+4.3. Experimental results
+
+Pr
+
+ep
+
+rin
+t
+
+no
+
+To validate the performance of our proposed method,
+we compared it with six representative methods, comprising
+both single-image-based methods and optical-SAR fusionbased methods. The former includes Pix2pix and McGAN,
+while the latter includes SAR-Opt-cGAN, DSen2-CR, CLFCR, and Align-CR. It should be emphasized that the original
+codes of these comparison methods, publicly available on
+GitHub, are used to train the networks. Table 1 presents the
+quantitative evaluation results of all comparison methods
+and our proposed method on the SEN12MS dataset, where
+the block bold font represents the optimal results and underlined results indicate second best results. We also provide
+a brief description of input data types and corresponding
+algorithmic complexity of each method in Table 1, facilitating a comprehensive evaluation of the performance of all
+methods. Distinctively, the GAN-based methods only compute the learnable parameters of the generators to ensure
+fairness. The quantitative average evaluation results in Table
+1 intuitively indicate that our proposed method achieves the
+best performance on the four metrics with fewer Flops and
+parameters. Fig. 8 shows the visual reconstruction results
+of all comparison methods and our proposed method under
+different land cover types, including four typical scenarios:
+valleys, plains, cities, and rivers. Each scenario presents the
+cloud removal results under high and low cloud coverage
+levels. The sizes of all the test image are 256 ∗ 256.
+On the whole, our proposed method effectively addresses
+the problem of cloud and shadow coverage under different
+land cover types and demonstrates good robustness across
+different levels of cloud coverage. Specifically, McGAN
+achieves favorable performance in scenes with relatively
+regular geographic feature distributions, such as plains.
+However, relying solely on the optical image results in
+severe blurring and noise under other scenes, such as complexly textured mountainous areas and feature-rich cities.
+Benefiting from the prior spatial information provided by
+:
+
+SAR images, Pix2pix can reconstruct cloud-covered regions through SAR-to-optical image translation. Nevertheless, SAR images fail to completely capture the unique
+information presented in optical images due to the modality heterogeneity, leading to the disappearance of certain
+contents in reconstruction results of the Pix2pix. Although
+SAR-Opt-cGAN employs the same network structure as
+Pix2pix and stacks cloudy and SAR images as inputs, its
+overall performance is superior to Pix2pix. However, SAROpt-cGAN exhibits significant optical artifacts in the reconstructed results. This highlights the challenge of fully leveraging the unique information provided by multi-modal images to avoid performance degradation caused by modality
+heterogeneity. DSen2-CR alleviates this challenge to some
+extent, but it still encounters spectral distortion in visual
+results for thick cloud-covered mountainous scenes. CLFCR achieves the most optimal visual outcomes for cloudfree image reconstruction among all comparison methods,
+owing to its global-local fusion strategy that fully exploits
+the supplementary information provided by SAR images.
+However, an unavoidable drawback is that the transformerbased attention mechanism used by CLF-CR limits its applicability to fixed-size optical images. When the size of the
+cloudy image changes, the model is no longer applicable.
+Align-CR considers alignment errors between different resolution images but neglects the interaction between multimodal data, resulting in poor model robustness, particularly
+in mountainous scenes. Compared to other methods, our
+approach leverages shared and private features from optical
+and SAR images simultaneously, rather than focusing on
+just one. Additionally, we designed a progressive dual attention fusion module to fully integrate specific information
+from different modalities, enabling adaptive reconstruction
+of cloud-covered areas.
+Besides, we further test the performance of the proposed approach under various levels of cloud and shadow
+coverage. Fig. 9 illustrates the cloud removal results from
+our proposed approach and several comparative methods
+under different degrees of cloud and shadow coverage in
+mountainous scenarios with complex and varied terrain, in
+which the cloud coverage level of the test cases in the first
+row progressively increases from left to right, ranging from
+cloud-free (first column) to complete cloud-covered (last
+column). The performance of McGAN gradually deteriorates as the level of clouds and shadows coverage increases.
+The reason for the performance degradation derives from
+the reduction of available cloud-free prior information in the
+input data. Conversely, the performance of Pix2pix is basically unaffected by changes in cloud and shadow coverage
+levels. Although both SAR-Opt-cGAN and DSen2-CR use
+optical and SAR images as inputs, the direct stacking of input data images in both methods leads to adverse reactions,
+resulting in performance degradation. The reconstruction
+results of SAR-Opt-cGAN are contaminated with noise and
+severe optical artifacts while Dens2-CR reconstructs only
+the spatial information of the cloud-covered region and
+suffers from severe spectral distortion. Align-CR performs
+
+ev
+iew
+ed
+
+of the reconstructed image by calculating the visual error,
+SAM calculates the spectral similarity [55] between the
+reconstructed and reference image, and SSIM calculates the
+spectral similarity between the reconstructed and reference
+image. All evaluation metrics mentioned above are obtained
+by averaging the values across each band of the multispectral image.
+
+Page 10 of 17
+
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=4946996
+
+ev
+iew
+ed
+tp
+ee
+rr
+no
+rin
+t
+ep
+
+Pr
+
+Fig. 8. Cloud and shadow removal results under different land cover types. For each example sample, from the top row to the bottom row
+represent SAR images, cloud images, the results of Pix2pix, McGAN, SAR-Opt-cGAN, Dsen2-CR, GLF-CR, Align-CR, ours, and the
+cloud-free images.
+
+relatively stable under different levels of clouds and shadows coverage, managing to reconstruct most of the spatialspectral information in cloud-covered areas, albeit with minor spectral distortions. CLF-CR mitigates the performance
+
+:
+
+degradation observed in SAR-Opt-cGAN and DSen2-CR
+by accounting for interactions between different modalities,
+achieving superior overall performance compared to other
+comparison methods. Our proposed method employs an
+Page 11 of 17
+
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=4946996
+
+ev
+iew
+ed
+tp
+ee
+rr
+no
+rin
+t
+ep
+
+Pr
+
+Fig. 9. Cloud and shadow removal results under different cloud coverage levels. For each example sample, from the top row to the bottom
+row represent SAR images, cloud images, the results of Pix2pix, McGAN, SAR-Opt-cGAN, Dsen2-CR, GLF-CR, Align-CR, ours, and
+the cloud-free images.
+
+improved attention mechanism to fully integrate specific
+information from different modalities and adopts a progressive fusion strategy to avoid adverse reactions caused by
+modality heterogeneity. This enables our method to produce
+
+:
+
+fusion results that are closest to the reference images under
+various levels of cloud and shadow coverage. Even under
+extensive cloud and shadow coverage, the performance of
+
+Page 12 of 17
+
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=4946996
+
+1
+
+30
+
+0.9
+
+14
+
+0.035
+
+MAE
+
+SAM
+
+SSIM
+
+PSNR
+
+12
+10
+
+0.8
+
+28
+
+40
+
+60
+
+80
+
+100
+
+0.03
+
+0.025
+
+8
+26
+20
+
+ev
+iew
+ed
+
+32
+
+0.7
+20
+
+cloud coverage(%)
+
+40
+
+60
+
+80
+
+100
+
+cloud coverage(%)
+
+(a) PSNR
+
+(b) SSIM
+
+6
+20
+
+40
+
+60
+
+80
+
+100
+
+0.02
+20
+
+cloud coverage(%)
+
+40
+
+60
+
+80
+
+100
+
+cloud coverage(%)
+
+(c) SAM
+
+(d) MAE
+
+Cloudy image
+
+𝑤∕𝑜 SF
+
+tp
+ee
+rr
+
+Fig. 10. Quantitative evaluation results of ablation experiments.
+
+𝑤∕𝑜 PF
+
+𝑤∕𝑜 CAB
+
+𝑤∕𝑜 MSAB
+
+𝑤∕𝑜 Dis
+
+ours
+
+Reference
+
+Fig. 11. Cloud and shadow removal results under different land cover types.
+
+5. Discussion
+5.1. Ablation experiment
+
+no
+
+our method surpasses that of CLF-CR, particularly in terms
+of spectral information.
+
+rin
+t
+
+Each component of our proposed method plays a crucial
+role in reconstructing high-fidelity cloud-free images. To
+analyze and determine the contribution of each module
+to the overall performance, we performed ablation experiments on the test dataset. The detailed results and analyses
+are presented below.
+
+Pr
+
+ep
+
+5.1.1. The impact of shared and private features.
+To verify the impact of shared and private features on
+the performance of the model, we remove shared or private
+features during the network training respectively, recorded
+as 𝑤∕𝑜 PF and 𝑤∕𝑜 SF. The caveat is that when only shared
+features are maintained, the MSAB is used and CABs are
+not employed in PDAFM. Similarly, when only private
+features are maintained, The result of their addition is sent
+directly to the MSAB. In general, compared to 𝑤∕𝑜 PF and
+𝑤∕𝑜 SF, the quantitative results in Fig. 10 make it clear that
+the proposed approach based on the full fusion of shared
+and private features achieves superior results. As shown in
+:
+
+Fig. 11, although 𝑤∕𝑜 PF and 𝑤∕𝑜 SF can recover most of
+the spatial information under thin cloud coverage, they still
+suffer from different degrees of spectral distortion compared
+with our proposed method. Furthermore, this performance
+gap becomes larger as more regions are covered by thick
+clouds.
+
+5.1.2. The effectiveness of the PDAFM.
+To validate the effectiveness of the PDAFM and distinguish the contribution of the CAB and MSAB to the
+improvement of model performance. To be more specific,
+we remove the CAB or MSAB during the network training
+respectively, which are recorded as 𝑤∕𝑜 CAB and 𝑤∕𝑜
+MSAB. It should be noted that the result of feature addition
+to feed into the MSAB directly when the CAB is removed.
+Compared with 𝑤∕𝑜 CAB, the quantitative comparison
+results in Fig. 10 and the visual results under various
+levels of cloud coverage in Fig. 11 show that our proposed
+method can effectively avoid the adverse reaction caused
+by the element-wise addition of features and improve the
+performance of cloud removal. With respect to 𝑤∕𝑜 MSAB,
+the visual comparison results in Fig. 11 show that the MSAB
+adopted in the PDAFM improves the reconstruction results
+in thick cloud-covered regions.
+
+Page 13 of 17
+
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=4946996
+
+T=1
+
+T=2
+
+T=3
+
+ev
+iew
+ed
+
+cloudy image
+
+T=4
+
+Reference
+
+tp
+ee
+rr
+
+Fig. 12. A visual comparison result of different the Number of Stages T.
+
+Fig. 13. Relationship between the performance of the proposed method and tuning parameters.
+
+rin
+t
+
+no
+
+5.1.3. The importance of discriminator.
+The generative capabilities of GAN have important
+implications for further improving the quality of reconstruction results. The proposed method DADIGAN is trained
+by removing the discriminator, recorded as 𝑤∕𝑜 Dis. The
+quantitative comparisons results are presented in Fig. 10,
+where our proposed method improves the results of the
+𝑤∕𝑜 Dis on four evaluation metrics. Moreover, the visual
+results shown in Fig. 11 intuitively demonstrate that the
+proposed method can distinctly improve the performance of
+the reconstructed images compared with the 𝑤∕𝑜 Dis.
+
+5.2. Analysis of the number of stage T
+
+Pr
+
+ep
+
+To test the performance of our proposed network DADIGAN under different numbers of stage T. We set different
+numbers of stage T to train the DADIGAN. The visual
+reconstruction results in Fig. 12 show how the number of
+stages T influences result of cloud removal. Particularly,
+the SAM error maps between the reconstruction and target
+images under different stages T intuitively prove that the
+optimal results are achieved when T is equal to 3, which
+can also be evidenced by the quantitative evaluation results
+in Table 2.
+
+5.3. Analysis of the GAN loss weight
+We use multiple loss functions to jointly optimize the
+parameters of our proposed network, which include the
+adversarial loss, L1loss and KL divergence loss. Two tuning
+
+:
+
+Table 2
+Quantitative assessment of different the number of stage T.
+Number of Stages
+PSNR↑
+SSIM↑
+SAM↓
+MAE↓
+
+1
+28.5362
+0.8853
+8.5287
+0.0286
+
+2
+29.3265
+0.8913
+8.4361
+0.0275
+
+3
+30.1205
+0.9015
+7.1432
+0.0231
+
+4
+28.3267
+0.8854
+7.5674
+0.0254
+
+parameters 𝜆1 and 𝜆2 are applied to balance the contribution
+of the L1loss and KL divergence loss. Fig. 13 presents
+how the model behaves differently when 𝜆1 and 𝜆2 take
+different values. Apparently, the proposed method provides
+a remarkable improvement in accuracy which 𝜆2 = 𝜆2 =
+100.
+
+5.4. The performance of the model when
+completely occluded by cloud and shadow
+Under the circumstance of complete occlusion, single
+image cloud removal and multi-temporal cloud removal
+methods become ineffective. The performance of our proposed method under different land cover types is tested
+when optical images are completely covered by cloud and
+shadow. The visual reconstruction results in Fig. 14 show
+that the spatial information is effectively recovered even
+
+Page 14 of 17
+
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=4946996
+
+CRediT authorship contribution statement
+
+ev
+iew
+ed
+
+Zhongchen He and Peng Wang: methodology, writing,
+review the manuscript and editing. Bo Huang: methodology and review the manuscript. Daiyin Zhu: review the
+manuscript. Harry F. Lee: review the manuscript. Henry
+Leung: review the manuscript.
+
+Declaration of competing interest
+
+The authors declare that they have no known competing
+financial interests or personal relationships that could have
+appeared to influence the work reported in this paper.
+
+Acknowledgments
+
+tp
+ee
+rr
+
+(a) SAR images (b) Cloudy images (c) Reference
+
+(d) ours
+
+Fig. 14. Example results of our proposed method on the images
+completely obscured by clouds.
+
+under complete cloud and shadow coverage. The reconstructed images show obvious spectral distortion because
+SAR images lack spectral information.
+
+6. Conclusion
+
+References
+
+Pr
+
+ep
+
+rin
+t
+
+no
+
+In this article, a dual attention blocks-based disentangled
+iterative GAN for cloud and shadow removal, named as
+DADIGAN, is proposed. In DADIGAN, we first construct
+a convolutional sparse coding-based observation model, the
+PGDA is utilized to optimize the model, which is achieved
+through a series of iterative steps. These iterative steps are
+unfolded into neural network modules to explicitly extract
+shared and private features from cloudy and SAR images.
+After that, the PDAFM is designed to fuse the shared and
+private features from different modalities while avoiding
+adverse reactions due to modal heterogeneity. Finally, the
+RB decodes the fused features to reconstruct high-fidelity
+cloud-free images. Experimental results on the SEN12MSCR dataset have demonstrated that DADIGAN yields the
+best cloud removal results under different land cover types
+and various levels of cloud coverage compared with other
+approaches.
+However, the quality of reconstructed image is not
+satisfactory when the optical image is completely covered
+by cloud and shadow. Next, we will attempt to use contrast
+learning to further improve the quality of reconstructed
+image when the optical image is completely obscured by
+cloud and shadow.
+
+:
+
+This work was supported in part by General Research
+Fund (GRF17617024), in part by Key Laboratory of Spatialtemporal Big Data Analysis and Application of Natural
+Resources in Megacities (KFKT-2024-01), Central Universities in Nanjing University of Aeronautics and Astronautics (NS2023020), in part by Natural Science Foundation
+of Jiangsu Province (BK20221478), in part by National
+Natural Science Foundation of China (61801211), in part
+by Hong Kong Scholars Program (XJ2022043), in part
+by Youth Promotion Talent Project of Jiangsu Association for Science and Technology (TJ-2023-010), Postgraduate Research & Practice Innovation Program of NUAA
+(xcxjh20230405).
+
+[1] M. Wieland, Y. Li, S. Martinis, Multi-sensor cloud and cloud shadow
+segmentation with a convolutional neural network, Remote Sens.
+Environ. 230 (2019) 111203.
+[2] Y. Zhang, W. B. Rossow, A. A. Lacis, V. Oinas, M. I. Mishchenko,
+Calculation of radiative fluxes from the surface to top of atmosphere
+based on isccp and other global data sets: Refinements of the radiative
+transfer model and the input data, Journal of Geophysical Research:
+Atmospheres 109 (2004).
+[3] J. Ju, D. P. Roy, The availability of cloud-free landsat etm+ data over
+the conterminous united states and globally, Remote Sens. Environ.
+112 (2008) 1196–1211.
+[4] P. Wang, L. Wang, H. Leung, G. Zhang, Super-resolution mapping
+based on spatial–spectral correlation for spectral imagery, IEEE
+Trans. Geosci. Remote Sens. 59 (2021) 2256–2268.
+[5] P. Ebel, A. Meraner, M. Schmitt, X. X. Zhu, Multisensor data fusion
+for cloud removal in global and all-season sentinel-2 imagery, IEEE
+Trans. Geosci. Remote Sens. 59 (2020) 5866–5878.
+[6] Q. Cheng, H. Shen, L. Zhang, P. Li, Inpainting for remotely sensed
+images with a multichannel nonlocal total variation model, IEEE
+Trans. Geosci. Remote Sens. 52 (2013) 175–187.
+[7] F. Meng, X. Yang, C. Zhou, Z. Li, A sparse dictionary learning-based
+adaptive patch inpainting method for thick clouds removal from highspatial resolution remote sensing imagery, Sensors. 17 (2017) 2130.
+[8] S. Lolli, L. Alparone, A. Garzelli, G. Vivone, Haze correction for
+contrast-based multispectral pansharpening, IEEE Geosci. Remote
+Sens. Lett. 14 (2017) 2255–2259.
+[9] M. Xu, M. Pickering, A. J. Plaza, X. Jia, Thin cloud removal based
+on signal transmission principles and spectral mixture analysis, IEEE
+Trans. Geosci. Remote Sens. 54 (2015) 1659–1669.
+[10] Y. Chen, W. He, N. Yokoya, T.-Z. Huang, Blind cloud and cloud
+shadow removal of multitemporal images based on total variation
+
+Page 15 of 17
+
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=4946996
+
+ev
+iew
+ed
+
+1125–1134.
+[30] F. N. Darbaghshahi, M. R. Mohammadi, M. Soryani, Cloud removal
+in remote sensing images using generative adversarial networks and
+sar-to-optical image translation, IEEE Trans. Geosci. Remote Sens.
+60 (2021) 1–9.
+[31] J. Gao, Q. Yuan, J. Li, H. Zhang, X. Su, Cloud removal with fusion
+of high resolution optical and sar images using generative adversarial
+networks, Remote Sens. 12 (2020) 191.
+[32] Y. Bengio, P. Simard, P. Frasconi, Learning long-term dependencies
+with gradient descent is difficult, IEEE Trans. Neural Netw. 5 (1994)
+157–166.
+[33] C. Mou, Q. Wang, J. Zhang, Deep generalized unfolding networks
+for image restoration, in: Proceedings of the IEEE/CVF conference
+on computer vision and pattern recognition, 2022, pp. 17399–17410.
+[34] Q. Xie, M. Zhou, Q. Zhao, Z. Xu, D. Meng, Mhf-net: An interpretable
+deep network for multispectral and hyperspectral image fusion, IEEE
+Trans. Pattern Anal. Mach. Intell. 44 (2020) 1457–1473.
+[35] J. Yang, L. Xiao, Y.-Q. Zhao, J. C.-W. Chan, Variational regularization network with attentive deep prior for hyperspectral–multispectral
+image fusion, IEEE Trans. Geosci. Remote Sens. 60 (2021) 1–17.
+[36] P. Wang, Z. He, B. Huang, M. D. Mura, H. Leung, J. Chanussot,
+Vogtnet: Variational optimization-guided two-stage network for multispectral and panchromatic image fusion, IEEE Trans. Neural Netw.
+Learn. Syst. (2024) 1–15.
+[37] M. Wang, W. He, H. Zhang, A spatial–spectral transformer network
+with total variation loss for hyperspectral image denoising, IEEE
+Geosci. Remote Sens. Lett. 20 (2023) 1–5.
+[38] J. Qu, W. Dong, Y. Li, S. Hou, Q. Du, An interpretable unsupervised
+unrolling network for hyperspectral pansharpening, IEEE Trans.
+Cybern. 53 (2023) 7943–7956.
+[39] W. Dong, J. Qu, S. Xiao, T. Zhang, Y. Li, X. Jia, Noise prior
+knowledge informed bayesian inference network for hyperspectral
+super-resolution, IEEE Trans. Image Process. 32 (2023) 3121–3135.
+[40] X. Deng, P. L. Dragotti, Deep convolutional neural network for multimodal image restoration and fusion, IEEE Trans. Pattern Anal. Mach.
+Intell. 43 (2020) 3333–3348.
+[41] X. Cao, X. Fu, D. Hong, Z. Xu, D. Meng, Pancsc-net: A model-driven
+deep unfolding method for pansharpening, IEEE Trans. Geosci.
+Remote Sens. 60 (2021) 1–13.
+[42] H. Sreter, R. Giryes, Learned convolutional sparse coding, in:
+2018 IEEE International Conference on Acoustics, Speech and Signal
+Processing (ICASSP), IEEE, 2018, pp. 2191–2195.
+[43] D. L. Donoho, De-noising by soft-thresholding, IEEE transactions
+on information theory 41 (1995) 613–627.
+[44] J. Zhang, B. Ghanem, Ista-net: Interpretable optimization-inspired
+deep network for image compressive sensing, in: Proceedings of the
+IEEE conference on computer vision and pattern recognition, 2018,
+pp. 1828–1837.
+[45] A. Beck, M. Teboulle, A fast iterative shrinkage-thresholding
+algorithm for linear inverse problems, SIAM journal on imaging
+sciences 2 (2009) 183–202.
+[46] Z. Zhang, Q. Liu, Y. Wang, Road extraction by deep residual u-net,
+IEEE Geosci. Remote Sens. Lett. 15 (2018) 749–753.
+[47] Z. Shen, M. Zhang, H. Zhao, S. Yi, H. Li, Efficient attention:
+Attention with linear complexities, in: Proceedings of the IEEE/CVF
+winter conference on applications of computer vision, 2021, pp.
+3531–3539.
+[48] J. Yu, Z. Lin, J. Yang, X. Shen, X. Lu, T. S. Huang, Generative
+image inpainting with contextual attention, in: Proceedings of the
+IEEE conference on computer vision and pattern recognition, 2018,
+pp. 5505–5514.
+[49] M. Xu, F. Deng, S. Jia, X. Jia, A. J. Plaza, Attention mechanismbased generative adversarial networks for cloud removal in landsat
+images, Remote Sens. Environ. 271 (2022) 112902.
+[50] X. Wen, Z. Pan, Y. Hu, J. Liu, An effective network integrating
+residual learning and channel attention mechanism for thin cloud
+removal, IEEE Geosci. Remote Sens. Lett. 19 (2022) 1–5.
+
+Pr
+
+ep
+
+rin
+t
+
+no
+
+tp
+ee
+rr
+
+regularized low-rank sparsity decomposition, ISPRS J. Photogramm.
+Remote Sens. 157 (2019) 93–107.
+[11] X. Li, H. Shen, L. Zhang, H. Zhang, Q. Yuan, G. Yang, Recovering
+quantitative remote sensing products contaminated by thick clouds
+and shadows using multitemporal dictionary learning, IEEE Trans.
+Geosci. Remote Sens. 52 (2014) 7086–7098.
+[12] J. Lin, T.-Z. Huang, X.-L. Zhao, M. Ding, Y. Chen, T.-X. Jiang,
+A blind cloud/shadow removal strategy for multi-temporal remote
+sensing images, in: 2021 IEEE International Geoscience and Remote
+Sensing Symposium IGARSS, IEEE, 2021, pp. 4656–4659.
+[13] M. Schmitt, L. H. Hughes, C. Qiu, X. X. Zhu, Aggregating cloudfree sentinel-2 images with google earth engine, ISPRS Annals of the
+Photogrammetry, Remote Sensing and Spatial Information Sciences
+4 (2019) 145–152.
+[14] C. Grohnfeldt, M. Schmitt, X. Zhu, A conditional generative
+adversarial network to fuse sar and multispectral optical data for
+cloud removal from sentinel-2 images, in: IGARSS 2018-2018 IEEE
+International Geoscience and Remote Sensing Symposium, IEEE,
+2018, pp. 1726–1729.
+[15] B. Huang, Y. Li, X. Han, Y. Cui, W. Li, R. Li, Cloud removal from
+optical satellite imagery with sar imagery using sparse representation,
+IEEE Geosci. Remote Sens. Lett. 12 (2015) 1046–1050.
+[16] J. Gao, H. Zhang, Q. Yuan, Cloud removal with fusion of sar
+and optical images by deep learning, in: 2019 10th International
+Workshop on the Analysis of Multitemporal Remote Sensing Images
+(MultiTemp), IEEE, 2019, pp. 1–3.
+[17] R. Bamler, Principles of synthetic aperture radar, Surv. Geophys. 21
+(2000) 147–157.
+[18] F. Xu, Y. Shi, P. Ebel, L. Yu, G.-S. Xia, W. Yang, X. X. Zhu, Glfcr: Sar-enhanced cloud removal with global–local fusion, ISPRS J.
+Photogramm. Remote Sens. 192 (2022) 268–278.
+[19] Y. Li, F. Wei, Y. Zhang, W. Chen, J. Ma, Hs2p: Hierarchical spectral and structure-preserving fusion network for multimodal remote
+sensing image cloud and shadow removal, Inform. Fusion 94 (2023)
+215–228.
+[20] Y. Wang, B. Zhang, W. Zhang, D. Hong, B. Zhao, Z. Li, Cloud
+removal with sar-optical data fusion using a unified spatial-spectral
+residual network, IEEE Trans. Geosci. Remote Sens. (2023).
+[21] C. Li, X. Liu, S. Li, Transformer meets gan: Cloud-free multispectral
+image reconstruction via multi-sensor data fusion in satellite images,
+IEEE Trans. Geosci. Remote Sens. (2023).
+[22] A. Meraner, P. Ebel, X. X. Zhu, M. Schmitt, Cloud removal in
+sentinel-2 imagery using a deep residual neural network and saroptical data fusion, ISPRS J. Photogramm. Remote Sens. 166 (2020)
+333–346.
+[23] J. Ma, Y. Chen, J. Pan, J. Xu, Z. Li, R. Xu, R. Chen, Sct-cr:
+A synergistic convolution-transformer modeling method using saroptical data fusion for cloud removal, Int. J. Appl. Earth Obs. Geoinf.
+130 (2024) 103909.
+[24] F. Xu, Y. Shi, P. Ebel, W. Yang, X. X. Zhu, Multimodal and
+multiresolution data fusion for high-resolution cloud removal: A
+novel baseline and benchmark, IEEE Trans. Geosci. Remote Sens.
+62 (2023) 1–15.
+[25] Z. Wen, J. Suo, J. Su, B. Li, Y. Zhou, Edge-sar assisted multi-modal
+fusion for enhanced cloud removal, IEEE Geosci. Remote Sens. Lett.
+(2023).
+[26] Y. LeCun, Y. Bengio, G. Hinton, Deep learning, nature 521 (2015)
+436–444.
+[27] I. Goodfellow, J. Pouget-Abadie, M. Mirza, B. Xu, D. Warde-Farley,
+S. Ozair, A. Courville, Y. Bengio, Generative adversarial nets,
+Advances in neural information processing systems 27 (2014).
+[28] J. Bermudez, P. Happ, D. Oliveira, R. Feitosa, Sar to optical image
+synthesis for cloud removal with generative adversarial networks,
+ISPRS Annals of the Photogrammetry, Remote Sensing and Spatial
+Information Sciences 4 (2018) 5–11.
+[29] P. Isola, J.-Y. Zhu, T. Zhou, A. A. Efros, Image-to-image translation
+with conditional adversarial networks, in: Proceedings of the IEEE
+conference on computer vision and pattern recognition, 2017, pp.
+
+:
+
+Page 16 of 17
+
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=4946996
+
+ev
+iew
+ed
+
+Pr
+
+ep
+
+rin
+t
+
+no
+
+tp
+ee
+rr
+
+[51] H. Liu, B. Jiang, Y. Xiao, C. Yang, Coherent semantic attention for
+image inpainting, in: Proceedings of the IEEE/CVF international
+conference on computer vision, 2019, pp. 4170–4179.
+[52] E. I. George, F. Liang, X. Xu, Improved minimax predictive densities
+under kullback–leibler loss (2006).
+[53] P. Ebel, A. Meraner, M. Schmitt, X. X. Zhu, Multisensor data fusion
+for cloud removal in global and all-season sentinel-2 imagery, IEEE
+Trans. Geosci. Remote Sens. 59 (2021) 5866–5878.
+[54] Z. Wang, A. C. Bovik, H. R. Sheikh, E. P. Simoncelli, Image quality
+assessment: from error visibility to structural similarity, IEEE Trans.
+Image Process. 13 (2004) 600–612.
+[55] F. A. Kruse, A. Lefkoff, y. J. Boardman, K. Heidebrecht, A. Shapiro,
+P. Barloon, A. Goetz, The spectral image processing system
+(sips)—interactive visualization and analysis of imaging spectrometer data, Remote Sens. Environ. 44 (1993) 145–163.
+[56] D. P. Kingma, J. Ba, Adam: A method for stochastic optimization,
+arXiv preprint arXiv:1412.6980 (2014).
+
+:
+
+Page 17 of 17
+
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=4946996
+
+

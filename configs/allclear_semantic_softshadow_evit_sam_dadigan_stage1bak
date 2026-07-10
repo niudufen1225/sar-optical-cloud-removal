@@ -1,0 +1,176 @@
+# EfficientViT-SAM 消融版严格语义拆分 Stage1。
+#
+# 与 allclear_semantic_softshadow_dadigan_stage1.yaml 的唯一核心差异：
+#   SoftShadow mask predictor 从官方 SAM ViT-H + LoRA 切换为
+#   EfficientViT-SAM-XL0 官方预训练初始化 + LiteMLA q/v 低秩 adapter。
+#
+# 训练语义仍然参考 SoftShadow：
+  #   - 使用离线 division_filter_results 作为 soft mask 监督；
+  #   - 使用 bbox prompt；
+  #   - prompt encoder 冻结；
+  #   - image encoder 原始参数冻结；
+  #   - 只训练轻量 adapter + mask decoder；
+  #   - 不用 ALLClear hard shadow support 裁剪预测 soft mask；
+  #   - shadow removal head 仍接 Restormer；
+  #   - cloud 区仍由 DaDiGAN 独立监督，cloud 优先。
+run_name: allclear_semantic_softshadow_evit_sam_dadigan_stage1
+output_root: outputs/allclear
+seed: 2026
+
+data:
+  root: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed
+  cache_dir: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/cache/unused300_image256_sar
+  train_manifest: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/manifests_official_mask_dadigan_damage/pairs_train.csv
+  val_manifest: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/manifests_official_mask_dadigan_damage/pairs_val.csv
+  test_manifest: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/manifests_official_mask_dadigan_damage/pairs_test.csv
+  optical_scale: 10000.0
+  load_sar: true
+  image_size: 256
+  rgb_indices: [3, 2, 1]
+  shadow_index: 3
+  cloud_index: 1
+  softshadow_mask_dir:
+  softshadow_bbox_path:
+  softshadow_mask_dir_train: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/softshadow_prompts/train/division_filter_results
+  softshadow_mask_dir_val: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/softshadow_prompts/val/division_filter_results
+  softshadow_mask_dir_test: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/softshadow_prompts/test/division_filter_results
+  softshadow_bbox_path_train: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/softshadow_prompts/train/bounding_boxes.yaml
+  softshadow_bbox_path_val: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/softshadow_prompts/val/bounding_boxes.yaml
+  softshadow_bbox_path_test: /home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/softshadow_prompts/test/bounding_boxes.yaml
+  # SoftShadow shadow_case 三状态，语义与主 ViT-H 配置一致。
+  softshadow_shadow_case_enabled: true
+  softshadow_shadow_case_positive_threshold: 0.05
+  softshadow_absent_shadow_threshold: 0.002
+  softshadow_absent_division_threshold: 0.002
+  softshadow_valid_shadow_threshold: 0.002
+  softshadow_valid_division_threshold: 0.005
+  softshadow_max_bbox_area: 0.80
+  softshadow_min_division_shadow_precision_dilated: 0.30
+  softshadow_max_clear_leakage: 0.30
+  softshadow_max_cloud_leakage: 0.30
+
+model:
+  framework: semantic_softshadow_dadigan_stage1
+  s2_channels: 13
+  sar_channels: 2
+  dim: 64
+  shadow_index: 3
+  cloud_index: 1
+
+  # EfficientViT-SAM SoftShadow-style mask predictor.
+  shadow_backend: efficientvit_softshadow
+  shadow_removal_backend: restormer
+  shadow_restormer_hidden_channels: 64
+  shadow_restormer_blocks: 2
+  shadow_restormer_heads: 4
+  softshadow_repo: /home/students/sushaoqi/CR/main/external/SoftShadow
+  softshadow_efficientvit_repo: /home/students/sushaoqi/CR/main/external/efficientvit
+  # 下载官方权重：
+  #   wget -O /home/students/sushaoqi/CR/main/pretrained/efficientvit_sam_xl0.pt \
+  #     https://huggingface.co/mit-han-lab/efficientvit-sam/resolve/main/efficientvit_sam_xl0.pt
+  softshadow_efficientvit_checkpoint: /home/students/sushaoqi/CR/main/pretrained/efficientvit_sam_xl0.pt
+  softshadow_efficientvit_model: efficientvit-sam-xl0
+  softshadow_sam_input_size: 1024
+  softshadow_bbox_space: sam_input
+  # SoftShadow-style trainable adapter: freeze base image encoder, train q/v adapter + mask decoder.
+  softshadow_efficientvit_adapter_rank: 8
+  softshadow_efficientvit_adapter_layers: all
+  softshadow_efficientvit_train_mask_decoder: true
+  # EfficientViT-SAM 官方强调 fp16/TensorRT 加速；这里默认允许 AMP，不强制 fp32。
+  softshadow_efficientvit_force_fp32: false
+  softshadow_use_hard_support_gate: false
+  softshadow_forward_valid_only: true
+
+  # DaDiGAN cloud-only branch，与主严格语义拆分配置保持一致。
+  cloud_backend: dadigan
+  cloud_ddin_steps: 3
+  cloud_prox_blocks: 6
+  cloud_reconstruct_blocks: 2
+  cloud_cab_sr_ratio: 8
+  cloud_cab_attention_mode: complement
+  cloud_msab_mode: restormer_mdta
+  cloud_mask_input_mode: learned
+  cloud_append_mask: true
+  cloud_mask_fill_value: 0.0
+  cloud_discriminator_condition_mask: true
+  cloud_discriminator_base_channels: 32
+  cloud_discriminator_layers: 5
+  cloud_discriminator_norm: batch
+  cloud_discriminator_output: patch
+
+loss:
+  final_mask_mode: all
+  final_l1: 0.0
+  grad: 0.0
+  # 上一次 100 epoch 日志里 SoftShadow 三项合计不到 recon_total 的 0.3%；
+  # valid_shadow 只有约 10%，因此这里提高权重，让 SoftShadow 至少形成
+  # 可见梯度，但仍不覆盖 DaDiGAN 的 100*L1 + 100*KL 主体。
+  shadow_mask: 30.0
+  shadow_mask_region: all
+  shadow_mask_outside_weight: 1.0
+  shadow_penumbra: 1.0
+  shadow_penumbra_mode: softshadow_no_penumbra
+  shadow_removal: 30.0
+  shadow_removal_region: soft_shadow
+  shadow_removal_loss_type: mse
+  shadow_soft_target_low_pass_kernel: 3
+  shadow_soft_target_mode: offline_required
+  shadow_soft_target_division_threshold: 0.05
+  shadow_case_gating: true
+  cloud_l1: 100.0
+  cloud_l1_region: cloud
+  cloud_l1_reduction: mask_mean
+  cloud_kl: 100.0
+  cloud_kl_mode: softplus_sum
+  cloud_kl_reduction: mask_mean
+  cloud_adv: 0.2
+  adversarial_loss: bce
+  cloud_gan_image: composite
+
+loss_schedule:
+  shadow_mask: {start_epoch: 1, ramp_epochs: 0}
+  shadow_penumbra: {start_epoch: 1, ramp_epochs: 0}
+  shadow_removal: {start_epoch: 1, ramp_epochs: 0}
+  cloud_l1: {start_epoch: 1, ramp_epochs: 0}
+  cloud_kl: {start_epoch: 1, ramp_epochs: 0}
+  cloud_adv: {start_epoch: 20, ramp_epochs: 20}
+
+train:
+  epochs: 100
+  batch_size: 8
+  grad_accum_steps: 1
+  val_batch_size: 4
+  num_workers: 6
+  pin_memory: true
+  persistent_workers: true
+  prefetch_factor: 2
+  optimizer: adam
+  lr: 1.0e-5
+  disc_lr: 4.0e-5
+  weight_decay: 0.0
+  distributed: ddp
+  dist_backend: nccl
+  ddp_find_unused_parameters: false
+  optimizer_fused: false
+  optimizer_foreach: false
+  allow_tf32: true
+  matmul_precision: high
+  cudnn_benchmark: true
+  torch_compile: false
+  amp: true
+  amp_dtype: bf16
+  grad_clip_norm: 0.0
+  lr_scheduler: none
+  val_every: 1
+  best_metric: recon_total
+  keep_best: 1
+
+eval:
+  batch_size: 4
+  num_workers: 6
+  pin_memory: true
+  persistent_workers: true
+  prefetch_factor: 2
+  visualize_splits: [val, test]
+  visualization_checkpoint: best
+  visual_samples_per_bucket: 3
