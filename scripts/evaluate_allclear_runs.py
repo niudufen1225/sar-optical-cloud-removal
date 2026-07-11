@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import subprocess
 import sys
 from pathlib import Path
@@ -23,6 +24,8 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+from src.allclear.eval_metrics import paired_bootstrap
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -94,6 +97,16 @@ def float_or_none(value: Any) -> float | None:
         return float(value)
     except Exception:
         return None
+
+
+def json_safe(value: Any) -> Any:
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, dict):
+        return {key: json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [json_safe(item) for item in value]
+    return value
 
 
 def summarize_run(run_dir: Path, analysis_dir: Path, checkpoint: Path | None) -> dict[str, Any]:
@@ -182,6 +195,66 @@ def collect_branch_summary(run_dir: Path, source: Path, split: str, out_rows: li
         out_rows.append(row)
 
 
+def paired_metric_names(rows1: list[dict[str, str]], rows2: list[dict[str, str]]) -> list[str]:
+    """Select quality metrics that are meaningful for S2-S1 paired deltas."""
+
+    common = set(rows1[0] if rows1 else {}).intersection(rows2[0] if rows2 else {})
+    selected = []
+    for name in sorted(common):
+        if not name.startswith("final_"):
+            continue
+        if name.endswith(("_mae", "_rmse", "_psnr", "_ssim", "_mean_abs_channel_bias")):
+            selected.append(name)
+        elif "_wavelet_" in name and name.endswith(("_mae", "_abs_delta")):
+            selected.append(name)
+    return selected
+
+
+def paired_comparison(
+    s1_csv: Path,
+    s2_csv: Path,
+    *,
+    run1: Path,
+    run2: Path,
+    split: str,
+    resamples: int,
+    seed: int,
+) -> dict[str, Any]:
+    rows1 = read_csv_rows(s1_csv)
+    rows2 = read_csv_rows(s2_csv)
+    by_id_1 = {str(row.get("sample_id", "")): row for row in rows1 if str(row.get("sample_id", ""))}
+    by_id_2 = {str(row.get("sample_id", "")): row for row in rows2 if str(row.get("sample_id", ""))}
+    shared_ids = sorted(set(by_id_1).intersection(by_id_2))
+    metrics: dict[str, Any] = {}
+    for name in paired_metric_names(rows1, rows2):
+        values1 = []
+        values2 = []
+        for sample_id in shared_ids:
+            try:
+                value1 = float(by_id_1[sample_id].get(name, "nan"))
+                value2 = float(by_id_2[sample_id].get(name, "nan"))
+            except (TypeError, ValueError):
+                value1, value2 = math.nan, math.nan
+            values1.append(value1)
+            values2.append(value2)
+        higher = name.endswith(("_psnr", "_ssim"))
+        metrics[name] = paired_bootstrap(
+            values1,
+            values2,
+            higher_is_better=higher,
+            resamples=resamples,
+            seed=seed,
+        )
+    return {
+        "status": "ok" if shared_ids else "no_shared_samples",
+        "split": split,
+        "run_s1": str(run1),
+        "run_s2": str(run2),
+        "per_sample_join": "exact sample_id intersection; row order is ignored",
+        "shared_samples": len(shared_ids),
+        "bootstrap": {"resamples": int(resamples), "seed": int(seed), "delta": "metric_s2 - metric_s1", "ci": "percentile 95%"},
+        "metrics": metrics,
+    }
 def write_report(path: Path, rows: list[dict[str, Any]], args: argparse.Namespace) -> None:
     lines = [
         "# ALLClear Batch Evaluation",
@@ -221,6 +294,7 @@ def write_report(path: Path, rows: list[dict[str, Any]], args: argparse.Namespac
             "- `visualization_inventory_all.csv`: saved low/medium/high/heavy visualization coverage.",
             "- `visual_candidate_comparison_all.csv`: image-panel proxy metrics extracted from saved visual grids.",
             "- `branch_metrics_all.csv`: checkpoint-based val/test metrics by candidate and region when branch eval is enabled.",
+            "- `paired_comparison.json`: paired S2-S1 bootstrap when `--paired-run` is supplied twice.",
             "- `<run>/log_visual/report.md`: detailed per-run log and visualization diagnosis.",
         ]
     )
@@ -243,6 +317,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--samples-per-bucket", type=int, default=5, help="Balanced split visualization samples per cloud bucket.")
     parser.add_argument("--skip-branch-eval", action="store_true")
     parser.add_argument("--skip-split-visuals", action="store_true")
+    parser.add_argument("--sar-counterfactual", action="store_true", help="Enable the five-forward SAR counterfactual evaluator.")
+    parser.add_argument("--sar-batch-size", type=int, default=4)
+    parser.add_argument("--sar-low-pass-kernel", type=int, default=5)
+    parser.add_argument("--paired-run", type=Path, action="append", default=[], help="Repeat exactly twice to produce paired S2-S1 bootstrap.")
+    parser.add_argument("--paired-split", default="test", choices=["train", "val", "test"])
+    parser.add_argument("--bootstrap-resamples", type=int, default=2000)
+    parser.add_argument("--bootstrap-seed", type=int, default=20260710)
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
 
@@ -252,6 +333,12 @@ def main() -> None:
     out_dir = args.output_dir.expanduser().resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     runs = discover_runs(args.root, args.run_dir, args.pattern)
+    paired_runs = [path.expanduser().resolve() for path in args.paired_run]
+    if paired_runs and len(paired_runs) != 2:
+        raise ValueError("--paired-run must be supplied exactly twice")
+    if paired_runs:
+        known = {path.resolve() for path in runs}
+        runs.extend(path for path in paired_runs if path not in known and (path / "train_log.csv").exists())
     if not runs:
         raise FileNotFoundError(f"No runs with train_log.csv found under {args.root}")
 
@@ -307,6 +394,8 @@ def main() -> None:
                 ]
                 if args.limit:
                     cmd.extend(["--limit", str(args.limit)])
+                if args.sar_counterfactual:
+                    cmd.extend(["--sar-counterfactual", "--sar-batch-size", str(args.sar_batch_size), "--sar-low-pass-kernel", str(args.sar_low_pass_kernel)])
                 run_cmd(cmd, dry_run=args.dry_run)
                 collect_branch_summary(run_dir, branch_dir / f"{split}_branch_metrics_summary.json", split, branch_rows)
 
@@ -347,6 +436,21 @@ def main() -> None:
     write_csv(out_dir / "visual_panel_quality_all.csv", visual_panel_rows)
     write_csv(out_dir / "visual_candidate_comparison_all.csv", visual_comparison_rows)
     write_csv(out_dir / "branch_metrics_all.csv", branch_rows)
+    if paired_runs and not args.dry_run and not args.skip_branch_eval:
+        pair_path_1 = paired_runs[0] / args.analysis_name / f"branch_{args.paired_split}" / f"{args.paired_split}_branch_metrics_per_sample.csv"
+        pair_path_2 = paired_runs[1] / args.analysis_name / f"branch_{args.paired_split}" / f"{args.paired_split}_branch_metrics_per_sample.csv"
+        if not pair_path_1.exists() or not pair_path_2.exists():
+            raise FileNotFoundError(f"Paired evaluator CSV missing: {pair_path_1} or {pair_path_2}")
+        comparison = paired_comparison(
+            pair_path_1,
+            pair_path_2,
+            run1=paired_runs[0],
+            run2=paired_runs[1],
+            split=args.paired_split,
+            resamples=max(2000, int(args.bootstrap_resamples)),
+            seed=int(args.bootstrap_seed),
+        )
+        (out_dir / "paired_comparison.json").write_text(json.dumps(json_safe(comparison), indent=2, ensure_ascii=False, allow_nan=False) + "\n", encoding="utf-8")
     write_report(out_dir / "REPORT.md", run_rows, args)
     print(f"batch_analysis_dir={out_dir}")
     print(f"report={out_dir / 'REPORT.md'}")

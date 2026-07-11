@@ -1,0 +1,144 @@
+{
+  "run_dir": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-10T23-43-14_stage1_glfcr_s2_screen10_seed2026",
+  "selection": {
+    "role": "S2",
+    "selection_rule": "earliest fully matching S2 run; later matching S2 duplicate is recorded as a risk"
+  },
+  "config": {
+    "run_name": "allclear_dadigan_glfcr_ablation_s2_screen10",
+    "top_level_seed": 2026,
+    "train_epochs_configured": 10,
+    "batch_size": 4,
+    "grad_accum_steps": 2,
+    "effective_global_batch": 8,
+    "optimizer": "adam",
+    "scheduler_config_value": null,
+    "lr": 3e-05,
+    "train_manifest": "/home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/omnicloudmask_v4_low300_mh1000/manifests/pairs_train.csv",
+    "val_manifest": "/home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/omnicloudmask_v4_low300_mh1000/manifests/pairs_val.csv",
+    "test_manifest": "/home/students/sushaoqi/CR/allclear_10pct_tx3_s2_s1_bucketed/omnicloudmask_v4_low300_mh1000/manifests/pairs_test.csv",
+    "scheduler_runtime": "cosine_warmup  warmup=5  min=2.0e-06  total=10"
+  },
+  "initialization": {
+    "path": "/home/students/sushaoqi/CR/main/pretrained/glfcr_dadigan_phase3_seed2026/s2_model_init.pt",
+    "sha256": "23c6474c4015047d2592a914d95142bd3fd24cd2cd9fe9fe0c1a11c105261e3f",
+    "kind": "model_initialization",
+    "pair_id": "34dc108df71aacea8ca26726",
+    "config_sha256": "86ad507ff3a0cac11b5730f0ae9384cd1c7fb9040a4948eba1302191ac52a62a",
+    "current_config_sha256": "a80aaf2b62b8185381dd1785a5890b3b3a7d75ae2451efa39a9768b9406b3cf7",
+    "config_compatibility": "runtime_screening_fields",
+    "allowed_config_differences": [
+      {
+        "path": "run_name",
+        "reference": "allclear_dadigan_glfcr_ablation_phase3",
+        "current": "allclear_dadigan_glfcr_ablation_s2_screen10",
+        "reference_missing": false,
+        "current_missing": false
+      },
+      {
+        "path": "train.epochs",
+        "reference": 100,
+        "current": 10,
+        "reference_missing": false,
+        "current_missing": false
+      }
+    ],
+    "model_structure_signature": "6357d2a053472a46161ff0e2c6cf3746613175c81f89823b8c52ed6fc84b1e8a",
+    "seed": 2026,
+    "strict_load": true,
+    "runtime_seed": 2026,
+    "fresh_optimizer": true,
+    "fresh_epoch_schedule": true,
+    "config_seed": 2026
+  },
+  "completion": {
+    "train_epochs_logged": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "val_epochs_logged": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "completed_exactly_10_epochs": true,
+    "training_log_reports_complete": true,
+    "nonfinite_csv_terms": [],
+    "nonfinite_log_token_found": false,
+    "nonfinite_log_rule": "matches Non-finite, standalone NaN, or standalone Inf; INFO log prefixes are excluded"
+  },
+  "checkpoint_selection": {
+    "metric": "pixel_total",
+    "best_epoch": 10,
+    "best_checkpoint": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-10T23-43-14_stage1_glfcr_s2_screen10_seed2026/checkpoints/best_epoch_0010_pixel_total_1.687005.pt",
+    "best_pixel_total": 1.6870054885231216,
+    "last_epoch": 10,
+    "last_pixel_total": 1.6870054885231216,
+    "last_checkpoint": "/home/students/sushaoqi/CR/main/outputs/allclear/2026-07-10T23-43-14_stage1_glfcr_s2_screen10_seed2026/checkpoints/last.pt",
+    "checkpoint_payload_consistency": {
+      "best_epoch_payload": 10,
+      "last_epoch_payload": 10,
+      "best_metric_payload": 1.6870054885231216,
+      "last_metric_payload": 1.6870054885231216,
+      "model_state_exact_equal": true,
+      "best_checkpoint_has_optimizer": true,
+      "last_checkpoint_has_optimizer": true
+    }
+  },
+  "timing": {
+    "total_seconds": 3029,
+    "mean_train_seconds_per_epoch": 285.5,
+    "mean_train_seconds_per_batch": 0.43689999999999996,
+    "peak_gpu_memory_mib": null,
+    "peak_gpu_memory_note": "not logged by the training run; historical peak cannot be reconstructed reliably after completion"
+  },
+  "latest_metrics_file": {
+    "epoch": 10,
+    "best_metric": 1.6870054885231216,
+    "best_metric_name": "pixel_total",
+    "last_train": {
+      "cloud_l1": 0.0,
+      "cloud_l1_missing": 0.0635624487616623,
+      "cloud_l1_known": 0.0,
+      "cloud_kl": 0.0,
+      "cloud_adv": 0.0,
+      "feature_matching": 0.0,
+      "perceptual": 0.0,
+      "pixel_total": 1.9068734558350449,
+      "perceptual_total": 0.0,
+      "recon_total": 1.9068734558350449,
+      "gan_total": 0.0,
+      "total": 1.9068734558350449
+    },
+    "loss_weights": {
+      "w_final_l1": 0.0,
+      "w_grad": 0.0,
+      "w_shadow_removal": 0.0,
+      "w_shadow_mask": 0.0,
+      "w_shadow_penumbra": 0.0,
+      "w_cloud_l1": 0.0,
+      "w_cloud_l1_missing": 30.0,
+      "w_cloud_l1_known": 0.0,
+      "w_cloud_kl": 0.0,
+      "w_cloud_adv": 0.0,
+      "w_feature_matching": 0.0,
+      "w_perceptual": 0.0
+    },
+    "lr": 4.673762078750737e-06
+  }
+}
